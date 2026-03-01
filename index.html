@@ -172,59 +172,36 @@
     z-index: 2;
   }
 
-  #logo-v {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 130px;
-    font-weight: 900;
-    color: transparent;
-    -webkit-text-stroke: 1px var(--accent1);
-    text-shadow:
-      0 0 20px rgba(0,255,204,0.3),
-      0 0 60px rgba(0,255,204,0.1);
-    letter-spacing: -4px;
-    line-height: 1;
-    animation: logo-glow 3s ease-in-out infinite alternate;
-    display: inline-block;
+  /* LOGO IMAGE — filtre 1999 */
+  #logo-img {
+    max-width: 640px;
+    width: 90%;
+    display: block;
+    margin: 0 auto;
+    /* filtre 1999 : légère désaturation, contraste dur, grain chaud */
+    filter:
+      sepia(0.3)
+      grayscale(0.2)
+      contrast(1.12)
+      brightness(0.88)
+      saturate(0.75)
+      drop-shadow(0 0 10px rgba(0,255,204,0.18));
+    animation: logo-img-glow 4s ease-in-out infinite alternate;
+    image-rendering: auto;
   }
 
-  @keyframes logo-glow {
-    0% { text-shadow: 0 0 10px rgba(0,255,204,0.2), 0 0 30px rgba(0,255,204,0.05); -webkit-text-stroke-color: var(--accent1); }
-    100% { text-shadow: 0 0 30px rgba(0,255,204,0.6), 0 0 80px rgba(0,255,204,0.2), 0 0 120px rgba(0,255,204,0.05); -webkit-text-stroke-color: #80ffee; }
+  @keyframes logo-img-glow {
+    0% {
+      filter: sepia(0.35) grayscale(0.25) contrast(1.08) brightness(0.84) saturate(0.7)
+              drop-shadow(0 0 6px rgba(0,255,204,0.12));
+    }
+    100% {
+      filter: sepia(0.15) grayscale(0.1) contrast(1.15) brightness(0.94) saturate(0.85)
+              drop-shadow(0 0 22px rgba(0,255,204,0.38));
+    }
   }
 
-  #logo-pour {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 130px;
-    font-weight: 900;
-    color: transparent;
-    -webkit-text-stroke: 1px var(--accent2);
-    text-shadow:
-      0 0 20px rgba(255,51,102,0.3);
-    letter-spacing: -4px;
-    line-height: 1;
-    animation: logo-glow2 3s ease-in-out infinite alternate 0.5s;
-    display: inline-block;
-  }
-
-  @keyframes logo-glow2 {
-    0% { text-shadow: 0 0 10px rgba(255,51,102,0.2); }
-    100% { text-shadow: 0 0 30px rgba(255,51,102,0.7), 0 0 80px rgba(255,51,102,0.2); }
-  }
-
-  #logo-design {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 130px;
-    font-weight: 900;
-    color: transparent;
-    -webkit-text-stroke: 1px var(--accent4);
-    text-shadow:
-      0 0 20px rgba(255,204,0,0.3);
-    letter-spacing: -4px;
-    line-height: 1;
-    animation: logo-glow3 3s ease-in-out infinite alternate 1s;
-    display: inline-block;
-  }
-
+  /* Garde les keyframes logo-glow3 utilisés par .hero-since */
   @keyframes logo-glow3 {
     0% { text-shadow: 0 0 10px rgba(255,204,0,0.2); }
     100% { text-shadow: 0 0 30px rgba(255,204,0,0.7), 0 0 80px rgba(255,204,0,0.2); }
@@ -482,13 +459,112 @@
 
   #hero-panel {
     position: relative;
-    height: 280px;
+    height: 360px;
     overflow: hidden;
-    background: linear-gradient(180deg, rgba(102,51,255,0.05) 0%, transparent 100%);
+    background: #000;
     display: flex;
     align-items: center;
     justify-content: center;
     border-bottom: 1px solid var(--border);
+  }
+
+  /* VIDEO DEMO REEL */
+  #demo-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: sepia(0.12) contrast(1.08) brightness(0.82) saturate(0.78);
+    z-index: 1;
+  }
+
+  /* VHS scanlines overlay */
+  .vhs-lines {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.1) 0px,
+      rgba(0,0,0,0.1) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* VHS glitch horizontal streak */
+  .vhs-glitch {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 10%, rgba(0,255,204,0.25) 40%, rgba(255,51,102,0.15) 70%, transparent 90%);
+    animation: vhs-tracking 7s linear infinite;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  @keyframes vhs-tracking {
+    0%   { top: -2px; opacity: 0; }
+    2%   { opacity: 1; }
+    98%  { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  /* VHS HUD — coin inférieur gauche */
+  .vhs-hud {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  .vhs-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .vhs-rec {
+    font-family: 'VT323', monospace;
+    font-size: 17px;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px rgba(255,51,102,0.9);
+  }
+
+  .vhs-ch {
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    color: rgba(255,204,0,0.65);
+    letter-spacing: 3px;
+  }
+
+  .vhs-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .vhs-label {
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    color: rgba(0,255,204,0.7);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0,255,204,0.4);
+  }
+
+  .vhs-tc {
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 2px;
   }
 
   /* Animated lines */
@@ -1011,7 +1087,7 @@
     <div id="splash-grid"></div>
     <div id="logo-area">
       <div>
-        <span id="logo-v">V</span><span id="logo-pour">POUR</span><span id="logo-design">DESIGN</span>
+        <img src="logo-vpourdesign.png" id="logo-img" alt="VPOURDESIGN">
       </div>
       <div id="tagline">agence créative</div>
     <a href="#" class="enter-btn"><span>[ ENTRER ]</span></a>
@@ -1072,16 +1148,28 @@
 
       <!-- HERO PANEL -->
       <div id="hero-panel">
-        <div class="hero-line"></div>
-        <div class="hero-line"></div>
-        <div class="hero-line"></div>
 
-        <div class="hero-text">
-          <div class="hero-headline">DISPONIBLE POUR MISSIONS</div>
-          <div class="hero-since">depuis 2009</div>
-          <div class="hero-sub">Agence créative complète</div>
-          <div class="hero-meta">SITES WEB &nbsp;·&nbsp; VIDÉOS &nbsp;·&nbsp; PUBS &nbsp;·&nbsp; IMAGES DE MARQUE</div>
+        <!-- VIDÉO DEMO REEL -->
+        <video id="demo-video" autoplay loop muted playsinline>
+          <source src="vpd-demo.webm" type="video/webm">
+        </video>
+
+        <!-- VHS overlays -->
+        <div class="vhs-lines"></div>
+        <div class="vhs-glitch"></div>
+
+        <!-- HUD style VHS/broadcast -->
+        <div class="vhs-hud">
+          <div class="vhs-top">
+            <span class="vhs-rec"><span class="blink">●</span> REC</span>
+            <span class="vhs-ch">CH 04 &nbsp;|&nbsp; SP</span>
+          </div>
+          <div class="vhs-bottom">
+            <span class="vhs-label">DEMO REEL // VPOURDESIGN</span>
+            <span class="vhs-tc" id="vhs-tc">00:00:00:00</span>
+          </div>
         </div>
+
       </div>
 
       <!-- WORK LABEL -->
@@ -1184,6 +1272,22 @@
 <script>
   // Update year
   document.getElementById('yr').textContent = new Date().getFullYear();
+
+  // VHS timecode
+  (function() {
+    let f = 0;
+    const el = document.getElementById('vhs-tc');
+    if (!el) return;
+    setInterval(function() {
+      f++;
+      const fr = f % 30;
+      const s  = Math.floor(f / 30) % 60;
+      const m  = Math.floor(f / 1800) % 60;
+      const h  = Math.floor(f / 108000);
+      const pad = n => String(n).padStart(2,'0');
+      el.textContent = pad(h)+':'+pad(m)+':'+pad(s)+':'+pad(fr);
+    }, 33);
+  })();
 
   // Animated counter
   let count = 24816;
