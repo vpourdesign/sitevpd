@@ -186,28 +186,28 @@
 
   .splash-tagline {
     font-family: 'VT323', monospace;
-    font-size: 22px;
+    font-size: 16px;
     color: var(--dim);
-    letter-spacing: 5px;
+    letter-spacing: 4px;
     text-transform: uppercase;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     animation: fadeIn 1.2s ease 0.4s both;
   }
 
   .splash-headline {
     font-family: 'VT323', monospace;
-    font-size: 42px;
+    font-size: 28px;
     color: var(--textbright);
-    letter-spacing: 2px;
-    line-height: 1.15;
-    text-shadow: 0 0 16px rgba(255,204,0,0.18);
+    letter-spacing: 1px;
+    line-height: 1.2;
+    text-shadow: 0 0 12px rgba(255,204,0,0.15);
     animation: fadeIn 1.4s ease 0.6s both;
   }
 
   /* LOGO IMAGE — filtre 1999 */
   #logo-img {
-    max-width: 300px;
-    width: 45%;
+    max-width: 420px;
+    width: 62%;
     display: block;
     margin: 0 auto;
     /* blanc + filtre 1999 : invert pour blanc, sepia chaud, léger grain */
@@ -1095,13 +1095,139 @@
     opacity: 0.9;
   }
 
+  /* ═══ CYBERPUNK UI ELEMENTS ═══ */
+
+  /* Corner brackets — 4 spans .cb inside any relative container */
+  .cb {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .cb.tl { top: 0; left: 0;   border-top: 2px solid var(--accent1); border-left: 2px solid var(--accent1); }
+  .cb.tr { top: 0; right: 0;  border-top: 2px solid var(--accent1); border-right: 2px solid var(--accent1); }
+  .cb.bl { bottom: 0; left: 0;  border-bottom: 2px solid var(--accent1); border-left: 2px solid var(--accent1); }
+  .cb.br { bottom: 0; right: 0; border-bottom: 2px solid var(--accent1); border-right: 2px solid var(--accent1); }
+  .cb.acc2 { border-color: var(--accent2) !important; }
+  .cb.acc4 { border-color: var(--accent4) !important; }
+
+  /* Page counter in topbar */
+  .page-counter {
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    color: var(--accent1);
+    letter-spacing: 3px;
+    opacity: 0.9;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* Diamond bullet prefix */
+  .diam::before {
+    content: '◆';
+    color: var(--accent1);
+    font-size: 9px;
+    margin-right: 7px;
+    opacity: 1;
+    vertical-align: middle;
+  }
+
+  /* Grid index on work label */
+  .grid-index {
+    font-family: 'VT323', monospace;
+    font-size: 15px;
+    color: var(--accent1);
+    letter-spacing: 2px;
+    opacity: 0.85;
+    margin-left: auto;
+  }
+  .work-grid-label { display: flex; align-items: center; }
+
+  /* Work grid wrapper with corner brackets */
+  .work-grid-wrap {
+    position: relative;
+  }
+
+  /* SIDE TRACK — fixed left edge scroll indicator */
+  #side-track {
+    position: fixed;
+    left: 7px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 500;
+    pointer-events: none;
+  }
+  .st-line {
+    width: 1px;
+    height: 28px;
+    background: linear-gradient(180deg, transparent, var(--accent1), transparent);
+    opacity: 0.6;
+  }
+  .st-dot {
+    width: 2px;
+    height: 5px;
+    background: var(--accent3);
+    opacity: 0.7;
+  }
+  .st-dot.lg {
+    height: 18px;
+    background: var(--accent1);
+    opacity: 1;
+    box-shadow: 0 0 6px rgba(0,255,204,0.6);
+  }
+
+  /* BOTTOM HUD ticker */
+  #bottom-hud {
+    background: var(--panel2);
+    border-top: 1px solid rgba(0,255,204,0.12);
+    padding: 5px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    overflow: hidden;
+    font-size: 11px;
+  }
+  .bhud-ticker {
+    overflow: hidden;
+    flex: 1;
+  }
+  .bhud-scroll {
+    font-family: 'VT323', monospace;
+    font-size: 13px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    white-space: nowrap;
+    display: inline-block;
+    animation: bhud-anim 30s linear infinite;
+  }
+  @keyframes bhud-anim {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .bhud-right {
+    font-family: 'VT323', monospace;
+    font-size: 13px;
+    color: var(--accent1);
+    letter-spacing: 2px;
+    opacity: 0.85;
+    flex-shrink: 0;
+    margin-left: 20px;
+  }
+
 </style>
 </head>
 <body>
 
 <!-- TOP STATUS BAR -->
 <div id="topbar">
-  <span class="topbar-left">VPOURDESIGN.COM &nbsp;::&nbsp; AGENCE CRÉATIVE &nbsp;::&nbsp; V 3.1.4</span>
+  <span class="topbar-left">◆ &nbsp;VPOURDESIGN.COM &nbsp;::&nbsp; AGENCE CRÉATIVE &nbsp;::&nbsp; V 3.1.4</span>
+  <span class="page-counter">01 / 05 &nbsp;◆</span>
   <span class="topbar-right">
     SYS_STATUS: <span style="color:var(--accent1)">ONLINE</span>
     &nbsp;&nbsp;|&nbsp;&nbsp;
@@ -1183,6 +1309,8 @@
 
       <!-- HERO PANEL -->
       <div id="hero-panel">
+        <span class="cb tl"></span><span class="cb tr"></span>
+        <span class="cb bl acc4"></span><span class="cb br acc4"></span>
 
         <!-- VIDÉO DEMO REEL -->
         <video id="demo-video" autoplay loop muted playsinline>
@@ -1208,9 +1336,12 @@
       </div>
 
       <!-- WORK LABEL -->
-      <div class="work-grid-label">// TRAVAUX SÉLECTIONNÉS &nbsp;&nbsp; [2024–1999]</div>
+      <div class="work-grid-label diam">TRAVAUX SÉLECTIONNÉS &nbsp;&nbsp; [2024–1999]<span class="grid-index">06 / 06</span></div>
 
       <!-- WORK GRID -->
+      <div class="work-grid-wrap">
+        <span class="cb tl acc2"></span><span class="cb tr acc2"></span>
+        <span class="cb bl"></span><span class="cb br"></span>
       <div class="work-grid">
 
         <div class="work-cell">
@@ -1274,6 +1405,7 @@
           </div>
         </div>
       </div>
+      </div><!-- /work-grid-wrap -->
 
       <!-- FEATURED TEXT -->
       <div class="featured-block">
@@ -1303,6 +1435,29 @@
   </div>
 
 </div><!-- /wrapper -->
+
+<!-- BOTTOM HUD -->
+<div id="bottom-hud">
+  <div class="bhud-ticker">
+    <span class="bhud-scroll">
+      ◆ VPOURDESIGN.COM &nbsp;—&nbsp; AGENCE CRÉATIVE DEPUIS 1999 &nbsp;—&nbsp; SITES WEB · VIDÉOS · IDENTITÉ VISUELLE · PUBLICITÉ &nbsp;—&nbsp; DISPONIBLE POUR MISSIONS &nbsp;—&nbsp; MONTRÉAL QC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ◆ VPOURDESIGN.COM &nbsp;—&nbsp; AGENCE CRÉATIVE DEPUIS 1999 &nbsp;—&nbsp; SITES WEB · VIDÉOS · IDENTITÉ VISUELLE · PUBLICITÉ &nbsp;—&nbsp; DISPONIBLE POUR MISSIONS &nbsp;—&nbsp; MONTRÉAL QC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    </span>
+  </div>
+  <span class="bhud-right">V 3.1.4 ◆</span>
+</div>
+
+<!-- SIDE TRACK -->
+<div id="side-track">
+  <div class="st-line"></div>
+  <div class="st-dot"></div>
+  <div class="st-dot lg"></div>
+  <div class="st-dot"></div>
+  <div class="st-dot"></div>
+  <div class="st-dot lg"></div>
+  <div class="st-dot"></div>
+  <div class="st-dot"></div>
+  <div class="st-line"></div>
+</div>
 
 <script>
   // Update year
