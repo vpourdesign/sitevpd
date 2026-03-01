@@ -1348,115 +1348,116 @@
     font-size: 8px; color: var(--accent4); opacity: 0.8;
   }
 
-  /* ═══ HAMBURGER ══════════════════════════════════════════════ */
+  /* ═══ HAMBURGER — dans #topbar, caché sur desktop ═══════════ */
   #ham-btn {
     display: none;
     flex-direction: column;
     justify-content: center;
-    gap: 5px;
+    gap: 6px;
     background: none;
-    border: 1px solid var(--border);
+    border: none;
+    border-left: 1px solid var(--border);
     cursor: crosshair;
-    padding: 8px 13px;
+    padding: 0 18px;
     flex-shrink: 0;
     align-self: stretch;
     transition: border-color 0.15s;
   }
-  #ham-btn:hover { border-color: var(--accent1); }
+  #ham-btn:hover { border-left-color: var(--accent1); }
   #ham-btn span {
     display: block;
-    width: 20px;
-    height: 2px;
+    width: 26px;
+    height: 3px;
     background: var(--accent1);
     transition: transform 0.2s, opacity 0.2s;
     pointer-events: none;
   }
-  #ham-btn.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  #ham-btn.active span:nth-child(1) { transform: translateY(9px) rotate(45deg); }
   #ham-btn.active span:nth-child(2) { opacity: 0; }
-  #ham-btn.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  #ham-btn.active span:nth-child(3) { transform: translateY(-9px) rotate(-45deg); }
   #nav-items { display: flex; flex: 1; }
 
   /* ═══ RESPONSIVE MOBILE ══════════════════════════════════════ */
   @media (max-width: 768px) {
     #side-track { display: none; }
 
-    /* Topbar */
-    #topbar { padding: 5px 10px; }
-    .topbar-left { font-size: 9px; letter-spacing: 0; max-width: 52vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* Topbar — hamburger visible en haut à droite */
+    #topbar { padding: 0 0 0 12px; }
+    .topbar-left { font-size: 11px; letter-spacing: 1px; max-width: 55vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .page-counter { display: none; }
     .topbar-right { display: none; }
+    #ham-btn { display: flex; }
 
     /* Splash */
-    #splash { padding: 18px 14px 12px; }
-    #logo-area { flex-direction: column; gap: 10px; text-align: center; }
+    #splash { padding: 22px 16px 16px; }
+    #logo-area { flex-direction: column; gap: 12px; text-align: center; }
     .splash-left { width: 100%; display: flex; justify-content: center; }
-    #logo-img { width: 52% !important; max-width: 200px !important; }
+    #logo-img { width: 55% !important; max-width: 220px !important; }
     .splash-right { max-width: 100%; text-align: center; }
-    .splash-headline { font-size: 36px; }
-    .splash-tagline { font-size: 13px; }
+    .splash-headline { font-size: 44px; }
+    .splash-tagline { font-size: 16px; }
 
-    /* Hamburger nav */
-    #navbar { flex-wrap: wrap; }
-    #ham-btn { display: flex; }
+    /* Nav dropdown — sous le topbar */
     #nav-items {
       width: 100%;
       flex-direction: column;
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.28s ease;
+      transition: max-height 0.3s ease;
       border-top: 1px solid var(--border);
     }
     #nav-items.open { max-height: 500px; }
     .nav-item {
       border-right: none;
-      border-bottom: 1px solid rgba(26,26,58,0.6);
-      padding: 13px 20px;
+      border-bottom: 1px solid rgba(26,26,58,0.7);
+      padding: 17px 22px;
       justify-content: flex-start;
-      font-size: 12px;
-      letter-spacing: 2px;
+      font-size: 15px;
+      letter-spacing: 3px;
     }
     .nav-item:last-child { border-bottom: none; }
 
-    /* Main grid → single column */
+    /* Main grid → colonne unique, left-col masqué */
     #main { grid-template-columns: 1fr; min-height: auto; border-left: none; border-right: none; }
-    #left-col { border-right: none; border-bottom: 1px solid var(--border); padding: 8px 0; }
-    .status-box  { display: none; }
-    .deco-circle { display: none; }
-    .counter-box { display: none; }
-    .section-label { font-size: 9px; }
-    .left-menu a { font-size: 12px; padding: 8px 10px 8px 14px; }
+    #left-col { display: none; }
 
     /* Hero panel */
-    #hero-panel { height: 200px; }
-    .vhs-label { font-size: 13px; letter-spacing: 2px; }
-    .vhs-rec { font-size: 13px; }
-    .hero-sub { font-size: 28px; }
-    .hero-headline { font-size: 10px; letter-spacing: 3px; }
+    #hero-panel { height: 210px; }
+    .vhs-label { font-size: 17px; letter-spacing: 2px; }
+    .vhs-rec { font-size: 15px; }
+    .vhs-ch { font-size: 13px; }
+    .hero-sub { font-size: 36px; }
+    .hero-headline { font-size: 12px; letter-spacing: 3px; }
 
     /* Work grid */
     .work-grid { grid-template-columns: repeat(2, 1fr); }
-    .work-grid-label { font-size: 10px; letter-spacing: 2px; padding: 10px 12px; }
+    .work-grid-label { font-size: 13px; letter-spacing: 2px; padding: 12px 14px; }
+    .cell-title-over { font-size: 15px; }
+    .cell-cat-over { font-size: 12px; }
+    .cell-num-over { font-size: 32px; }
 
     /* Featured */
-    .featured-block { clip-path: none !important; padding: 12px; }
-    .feat-body { max-width: 100%; font-size: 12px; }
-    .hero-since { font-size: 42px; }
+    .featured-block { clip-path: none !important; padding: 18px 16px; }
+    .feat-body { max-width: 100%; font-size: 15px; line-height: 2; }
+    .feat-title { font-size: 14px; letter-spacing: 2px; }
+    .hero-since { font-size: 48px; }
 
     /* Footer */
-    #footer { flex-direction: column; gap: 6px; text-align: center; padding: 12px; }
-    .footer-copy { font-size: 10px; }
-    .footer-status { font-size: 10px; }
+    #footer { flex-direction: column; gap: 8px; text-align: center; padding: 14px; }
+    .footer-copy { font-size: 13px; }
+    .footer-status { font-size: 12px; }
+    .footer-link { font-size: 13px; }
 
     /* Bottom HUD */
     .bhud-right { display: none; }
-    .bhud-scroll { font-size: 11px; }
-    #bottom-hud { padding: 5px 10px; }
+    .bhud-scroll { font-size: 13px; }
+    #bottom-hud { padding: 6px 12px; }
   }
 
   @media (max-width: 480px) {
     .work-grid { grid-template-columns: 1fr; }
-    .splash-headline { font-size: 28px; }
-    .topbar-left { max-width: 60vw; }
+    .splash-headline { font-size: 36px; }
+    .feat-body { font-size: 14px; }
   }
 
 </style>
@@ -1474,6 +1475,7 @@
     &nbsp;&nbsp;|&nbsp;&nbsp;
     1999–<span id="yr"></span>
   </span>
+  <button id="ham-btn" aria-label="Menu"><span></span><span></span><span></span></button>
 </div>
 
 <div id="wrapper">
@@ -1502,7 +1504,6 @@
 
   <!-- NAV -->
   <div id="navbar">
-    <button id="ham-btn" aria-label="Menu"><span></span><span></span><span></span></button>
     <div id="nav-items">
       <a href="#" class="nav-item active">Accueil</a>
       <a href="#" class="nav-item">Travaux</a>
