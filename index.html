@@ -1447,10 +1447,8 @@
         <span class="cb tl"></span><span class="cb tr"></span>
         <span class="cb bl acc4"></span><span class="cb br acc4"></span>
 
-        <!-- VIDÉO DEMO REEL -->
-        <video id="demo-video" autoplay loop muted playsinline>
-          <source src="vpd-demo.webm" type="video/webm">
-        </video>
+        <!-- ANIMATION RÉTRO SYNTHWAVE -->
+        <canvas id="demo-video"></canvas>
 
         <!-- VHS overlays -->
         <div class="vhs-lines"></div>
@@ -1598,6 +1596,177 @@
 <script>
   // Update year
   document.getElementById('yr').textContent = new Date().getFullYear();
+
+  // ── ANIMATION RÉTRO SYNTHWAVE ──────────────────────────────
+  (function () {
+    const cv = document.getElementById('demo-video');
+    if (!cv || cv.tagName !== 'CANVAS') return;
+    const cx = cv.getContext('2d');
+
+    function resize() {
+      cv.width  = cv.offsetWidth  || 800;
+      cv.height = cv.offsetHeight || 360;
+    }
+    resize();
+    window.addEventListener('resize', function () { resize(); initDrops(); });
+
+    // ── GRILLE PERSPECTIVE ─────────────────────────────────
+    let gT = 0;
+    function drawGrid(dt) {
+      gT += dt;
+      const w = cv.width, h = cv.height;
+      const vx = w * 0.5;
+      const vy = h * 0.5;
+
+      // Lignes verticales en éventail
+      const nV = 20;
+      for (let i = 0; i <= nV; i++) {
+        const bx = w * (i / nV);
+        const dist = Math.abs(i - nV / 2) / (nV / 2);
+        cx.strokeStyle = 'rgba(102,51,255,' + (0.02 + dist * 0.1) + ')';
+        cx.lineWidth = 0.5;
+        cx.beginPath();
+        cx.moveTo(vx, vy);
+        cx.lineTo(bx, h);
+        cx.stroke();
+      }
+
+      // Lignes horizontales scrollantes (perspective)
+      const nH = 16;
+      const off = (gT * 0.22) % 1;
+      for (let i = 0; i < nH; i++) {
+        const p   = ((i / nH) + off) % 1;
+        const y   = vy + (h - vy) * Math.pow(p, 1.7);
+        const pct = (y - vy) / (h - vy);
+        const x0  = vx * (1 - pct);
+        const x1  = w - (w - vx) * (1 - pct);
+        cx.strokeStyle = 'rgba(0,255,204,' + (p * 0.22) + ')';
+        cx.lineWidth = 0.5;
+        cx.beginPath();
+        cx.moveTo(x0, y);
+        cx.lineTo(x1, y);
+        cx.stroke();
+      }
+
+      // Ligne horizon néon
+      cx.save();
+      cx.shadowColor  = 'rgba(255,51,102,0.9)';
+      cx.shadowBlur   = 10;
+      cx.strokeStyle  = 'rgba(255,51,102,0.55)';
+      cx.lineWidth    = 1;
+      cx.beginPath();
+      cx.moveTo(0, vy);
+      cx.lineTo(w, vy);
+      cx.stroke();
+      cx.restore();
+    }
+
+    // ── PLUIE DE CARACTÈRES HEX ────────────────────────────
+    var CHARS = '0123456789ABCDEF◆▓▒░╬≡∞';
+    var FS = 11;
+    var drops = [];
+    var charClock = 0;
+
+    function rndChar() { return CHARS[Math.floor(Math.random() * CHARS.length)]; }
+
+    function initDrops() {
+      var cols = Math.floor(cv.width / FS);
+      drops = [];
+      for (var i = 0; i < cols; i++) {
+        var d = {
+          x: i * FS,
+          y: Math.random() * cv.height * 1.5 - cv.height * 0.5,
+          speed: 12 + Math.random() * 18,
+          alpha: 0.04 + Math.random() * 0.08,
+          len: 4 + Math.floor(Math.random() * 7),
+          chars: [],
+          cyan: Math.random() > 0.5
+        };
+        for (var j = 0; j < d.len; j++) d.chars.push(rndChar());
+        drops.push(d);
+      }
+    }
+
+    function updateDrops(dt) {
+      charClock += dt;
+      var mut = charClock > 0.11;
+      if (mut) charClock = 0;
+      var h = cv.height;
+      drops.forEach(function (d) {
+        d.y += d.speed * dt;
+        if (d.y - d.len * FS > h) d.y = -d.len * FS * 0.5;
+        if (mut && Math.random() < 0.25)
+          d.chars[Math.floor(Math.random() * d.len)] = rndChar();
+      });
+    }
+
+    function drawDrops() {
+      cx.font = FS + 'px "Share Tech Mono", monospace';
+      var h = cv.height;
+      drops.forEach(function (d) {
+        var rgb = d.cyan ? '0,255,204' : '102,51,255';
+        d.chars.forEach(function (ch, i) {
+          var cy = d.y + i * FS;
+          if (cy < -FS || cy > h + FS) return;
+          var fade = (i + 1) / d.len;
+          cx.fillStyle = 'rgba(' + rgb + ',' + (d.alpha * fade) + ')';
+          cx.fillText(ch, d.x, cy);
+        });
+      });
+    }
+
+    // ── GLITCH ALÉATOIRE ──────────────────────────────────
+    var glitchTimer  = 3 + Math.random() * 5;
+    var glitchActive = false;
+    var glitchDur    = 0;
+
+    function updateGlitch(dt) {
+      if (glitchActive) {
+        glitchDur -= dt;
+        if (glitchDur <= 0) glitchActive = false;
+      } else {
+        glitchTimer -= dt;
+        if (glitchTimer <= 0) {
+          glitchTimer  = 4 + Math.random() * 9;
+          glitchActive = true;
+          glitchDur    = 0.04 + Math.random() * 0.1;
+        }
+      }
+    }
+
+    function drawGlitch() {
+      if (!glitchActive) return;
+      var w = cv.width, h = cv.height;
+      var y      = Math.floor(Math.random() * h);
+      var sliceH = 3 + Math.floor(Math.random() * 18);
+      var shift  = Math.round((Math.random() - 0.5) * 22);
+      try {
+        var img = cx.getImageData(0, y, w, sliceH);
+        cx.putImageData(img, shift, y);
+      } catch(e) {}
+      cx.fillStyle = 'rgba(255,51,102,0.04)';
+      cx.fillRect(0, y, w, sliceH);
+    }
+
+    // ── BOUCLE PRINCIPALE ─────────────────────────────────
+    var last = performance.now();
+    function frame(ts) {
+      var dt = Math.min((ts - last) / 1000, 0.05);
+      last = ts;
+      var w = cv.width, h = cv.height;
+      cx.fillStyle = '#080810';
+      cx.fillRect(0, 0, w, h);
+      drawGrid(dt);
+      updateDrops(dt);
+      drawDrops();
+      updateGlitch(dt);
+      drawGlitch();
+      requestAnimationFrame(frame);
+    }
+
+    initDrops();
+    requestAnimationFrame(frame);
+  })();
 
   // VHS timecode
   (function() {
