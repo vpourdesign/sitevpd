@@ -445,6 +445,10 @@
   }
   .fb-action-btn:hover { background: #3a3b3c; color: #e4e6eb; }
   .fb-action-btn svg { width: 18px; height: 18px; fill: currentColor; }
+  .fb-action-btn.is-pending,
+  .fb-action-btn.is-approved {
+    color: var(--accent1);
+  }
 
   /* ── ERROR / EMPTY STATE ── */
   #error-state {
@@ -751,6 +755,8 @@
   // ── SHEET CONFIG ──
   var SHEET_ID = '18IpuW-T0uajojkEALwkFIbZOjPM5Bt0CLRM_6AEPcFg';
   var GVIZ_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?gid=0';
+  var APPROVAL_WEB_APP_URL = '';
+  var APPROVED_STATUS_VALUE = 'Approuvé';
 
   // ── ELEMENTS ──
   var grid = document.getElementById('flash-grid');
@@ -1213,11 +1219,54 @@
     document.body.appendChild(script);
   }
 
+  function sendApproval(post, button) {
+    if (!APPROVAL_WEB_APP_URL) {
+      alert('Ajoutez l’URL du Web App Google Apps Script dans APPROVAL_WEB_APP_URL.');
+      return;
+    }
+
+    if (button.classList.contains('is-approved') || button.classList.contains('is-pending')) return;
+
+    button.classList.add('is-pending');
+    button.disabled = true;
+    button.innerHTML = 'Envoi...';
+
+    var params = new URLSearchParams({
+      sheetId: SHEET_ID,
+      day: post.day || '',
+      date: post.date || '',
+      text: (post.text || '').slice(0, 80),
+      approvedValue: APPROVED_STATUS_VALUE
+    });
+
+    fetch(APPROVAL_WEB_APP_URL + '?' + params.toString(), { method: 'GET', mode: 'cors' })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (!data || !data.ok) throw new Error(data && data.error ? data.error : 'Approval failed');
+        button.classList.remove('is-pending');
+        button.classList.add('is-approved');
+        button.innerHTML = 'Approuvé';
+      })
+      .catch(function(err) {
+        button.classList.remove('is-pending');
+        button.disabled = false;
+        button.innerHTML = 'J\'aime';
+        alert('Impossible de mettre à jour le statut : ' + (err && err.message ? err.message : err));
+      });
+  }
+
   // ── BUILD CARD ──
   // imgUrls: array of resolved URLs (may be empty)
   // type: 'image' | 'reel' | 'carrousel' | ''
   // format: '1:1' | '4:5' | '9:16' | ''
-  function buildCard(clientName, day, date, text, imgUrls, type, format) {
+  function buildCard(post) {
+    var clientName = post.client;
+    var day = post.day;
+    var date = post.date;
+    var text = post.text;
+    var imgUrls = post.imgs;
+    var type = post.type;
+    var format = post.format;
     var typeLow = (type || '').toLowerCase().trim();
     var formatLow = (format || '').toLowerCase().trim();
     var isReel = typeLow === 'reel' || typeLow === 'reels' || formatLow === 'reel' || formatLow === 'reels' || formatLow === 'story';
@@ -1402,10 +1451,24 @@
     // Actions
     var actions = document.createElement('div');
     actions.className = 'fb-actions';
-    actions.innerHTML =
-      '<button class="fb-action-btn"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>J\'aime</button>' +
-      '<button class="fb-action-btn"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Commenter</button>' +
-      '<button class="fb-action-btn"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Partager</button>';
+    var likeBtn = document.createElement('button');
+    likeBtn.className = 'fb-action-btn';
+    likeBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>J\'aime';
+    likeBtn.addEventListener('click', function() {
+      sendApproval(post, likeBtn);
+    });
+
+    var commentBtn = document.createElement('button');
+    commentBtn.className = 'fb-action-btn';
+    commentBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Commenter';
+
+    var shareBtn = document.createElement('button');
+    shareBtn.className = 'fb-action-btn';
+    shareBtn.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Partager';
+
+    actions.appendChild(likeBtn);
+    actions.appendChild(commentBtn);
+    actions.appendChild(shareBtn);
     card.appendChild(actions);
 
     return card;
@@ -1510,7 +1573,7 @@
       var count = 0;
       allPosts.forEach(function(p) {
         if (filterPlat !== 'all' && p.plat !== filterPlat) return;
-        grid.appendChild(buildCard(p.client, p.day, p.date, p.text, p.imgs, p.type, p.format));
+        grid.appendChild(buildCard(p));
         count++;
       });
       refreshImgurEmbeds();
