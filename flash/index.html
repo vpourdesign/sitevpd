@@ -557,6 +557,105 @@
   @media (max-width: 480px) {
     #flash-grid { grid-template-columns: 1fr; }
   }
+
+  /* ── PLATFORM TABS ── */
+  #platform-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 10px 24px 0;
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .ptab {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--dim);
+    border-bottom: none;
+    padding: 7px 18px 9px;
+    font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 2px;
+    position: relative;
+    top: 1px;
+    transition: color .15s, border-color .15s;
+  }
+  .ptab:hover { color: var(--accent1); border-color: var(--accent1); }
+  .ptab.active {
+    color: var(--accent1);
+    border-color: var(--accent1);
+    background: var(--panel);
+  }
+
+  /* ── POST TYPE BADGE ── */
+  .fb-type-badge {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: rgba(0,0,0,.65);
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ── REEL PLAY OVERLAY ── */
+  .reel-play-btn {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px; height: 56px;
+    background: rgba(255,255,255,.18);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+    z-index: 2;
+  }
+  .reel-play-btn::after {
+    content: '';
+    width: 0; height: 0;
+    border-left: 20px solid #fff;
+    border-top: 12px solid transparent;
+    border-bottom: 12px solid transparent;
+    margin-left: 5px;
+  }
+
+  /* ── ASPECT RATIO WRAPPER ── */
+  .ratio-box { position: relative; width: 100%; overflow: hidden; background: #111; }
+  .ratio-box img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ratio-1-1  { padding-bottom: 100%; }
+  .ratio-4-5  { padding-bottom: 125%; }
+  .ratio-9-16 { padding-bottom: 177.78%; }
+
+  /* ── CAROUSEL ── */
+  .carousel-track { display: flex; transition: transform .3s ease; }
+  .carousel-slide  { min-width: 100%; flex-shrink: 0; position: relative; }
+  .carousel-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(0,0,0,.55); color: #fff;
+    border: none; width: 30px; height: 30px; border-radius: 50%;
+    cursor: pointer; font-size: 14px; display: flex;
+    align-items: center; justify-content: center; z-index: 3;
+  }
+  .carousel-nav.prev { left: 6px; }
+  .carousel-nav.next { right: 6px; }
+  .carousel-dots {
+    position: absolute; bottom: 7px; left: 50%;
+    transform: translateX(-50%); display: flex; gap: 5px; z-index: 3;
+  }
+  .carousel-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,.4); cursor: pointer; border: none;
+    padding: 0; transition: background .2s;
+  }
+  .carousel-dot.on { background: #fff; }
 </style>
 </head>
 <body>
@@ -601,6 +700,9 @@
   </button>
   <span id="status-bar">En attente…</span>
 </div>
+
+<!-- PLATFORM TABS -->
+<div id="platform-tabs" style="display:none"></div>
 
 <!-- LOADING -->
 <div id="loading-state">
@@ -744,16 +846,39 @@
     return val;
   }
 
-  // ── DATE FORMATTER ──
-  function formatPostDate(dayVal, dateVal) {
-    var parts = [];
-    if (dayVal) parts.push(dayVal);
-    if (dateVal) parts.push(dateVal);
-    return parts.join(' · ');
+  // ── HELPERS ──
+  function cell(row, col) { return col >= 0 && row[col] ? row[col].trim() : ''; }
+
+  // ── BUILD RATIO BOX ──
+  // Wraps an image (or carousel) in a padding-based ratio box.
+  function ratioClass(fmt) {
+    if (!fmt) return 'ratio-1-1';
+    var f = fmt.replace(/\s/g,'');
+    if (f === '4:5' || f === '45') return 'ratio-4-5';
+    if (f === '9:16' || f === '916') return 'ratio-9-16';
+    return 'ratio-1-1';
+  }
+
+  function makeImg(src, onerrorFn) {
+    var img = document.createElement('img');
+    img.src = src;
+    img.alt = '';
+    img.loading = 'lazy';
+    if (onerrorFn) img.onerror = onerrorFn;
+    return img;
   }
 
   // ── BUILD CARD ──
-  function buildCard(day, date, text, imgUrl) {
+  // imgUrls: array of resolved URLs (may be empty)
+  // type: 'image' | 'reel' | 'carrousel' | ''
+  // format: '1:1' | '4:5' | '9:16' | ''
+  function buildCard(clientName, day, date, text, imgUrls, type, format) {
+    var typeLow = (type || '').toLowerCase().trim();
+    var isReel = typeLow === 'reel' || typeLow === 'reels';
+    var isCarousel = typeLow === 'carrousel' || typeLow === 'carousel';
+    var rc = ratioClass(format);
+    var hasImgs = imgUrls.length > 0;
+
     var card = document.createElement('div');
     card.className = 'fb-card';
 
@@ -761,48 +886,127 @@
     if (day) {
       var badge = document.createElement('div');
       badge.className = 'fb-day-badge';
-      badge.textContent = day;
+      badge.textContent = day + (date ? ' ' + date : '');
       card.appendChild(badge);
     }
 
     // Header
     var header = document.createElement('div');
     header.className = 'fb-header';
-
     var avatar = document.createElement('div');
     avatar.className = 'fb-avatar';
     avatar.innerHTML = 'FD';
-
     var meta = document.createElement('div');
     meta.className = 'fb-meta';
     meta.innerHTML =
-      '<div class="fb-page-name">Flash Décor</div>' +
+      '<div class="fb-page-name">' + (clientName || 'Flash Décor') + '</div>' +
       '<div class="fb-date-row">' +
-        '<span class="fb-post-date">' + formatPostDate(day, date) + '</span>' +
-        '<svg class="fb-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' +
+        '<span class="fb-post-date">' + (day ? day + (date ? ' ' + date : '') : (date || '')) + '</span>' +
+        '<svg class="fb-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+          '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>' +
+          '<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>' +
+        '</svg>' +
       '</div>';
-
     var moreBtn = document.createElement('div');
     moreBtn.style.cssText = 'margin-left:auto;color:#b0b3b8;font-size:20px;cursor:pointer;padding:0 6px;line-height:1;';
     moreBtn.innerHTML = '&hellip;';
-
     header.appendChild(avatar);
     header.appendChild(meta);
     header.appendChild(moreBtn);
     card.appendChild(header);
 
-    // Image
+    // ── IMAGE / CAROUSEL / REEL BLOCK ──
     var imgWrap = document.createElement('div');
     imgWrap.className = 'fb-image-wrap';
-    if (imgUrl) {
-      var img = document.createElement('img');
-      img.src = imgUrl;
-      img.alt = '';
-      img.loading = 'lazy';
-      img.onerror = function() {
-        imgWrap.innerHTML = '<div class="fb-image-placeholder">IMG</div>';
-      };
-      imgWrap.appendChild(img);
+    imgWrap.style.position = 'relative';
+
+    if (isCarousel && imgUrls.length > 1) {
+      // Multi-slide carousel
+      var ratioBox = document.createElement('div');
+      ratioBox.className = 'ratio-box ' + rc;
+      ratioBox.style.overflow = 'hidden';
+
+      var track = document.createElement('div');
+      track.className = 'carousel-track';
+      track.style.position = 'absolute';
+      track.style.inset = '0';
+      track.style.width = '100%';
+      track.style.height = '100%';
+
+      imgUrls.forEach(function(src) {
+        var slide = document.createElement('div');
+        slide.className = 'carousel-slide';
+        slide.style.height = '100%';
+        var sImg = makeImg(src, function() { slide.innerHTML = '<div class="fb-image-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">IMG</div>'; });
+        sImg.style.position = 'absolute';
+        sImg.style.inset = '0';
+        sImg.style.width = '100%';
+        sImg.style.height = '100%';
+        sImg.style.objectFit = 'cover';
+        slide.appendChild(sImg);
+        track.appendChild(slide);
+      });
+      ratioBox.appendChild(track);
+
+      // Prev / Next buttons
+      var prevBtn = document.createElement('button');
+      prevBtn.className = 'carousel-nav prev';
+      prevBtn.innerHTML = '&#8249;';
+      var nextBtn = document.createElement('button');
+      nextBtn.className = 'carousel-nav next';
+      nextBtn.innerHTML = '&#8250;';
+
+      // Dots
+      var dotsEl = document.createElement('div');
+      dotsEl.className = 'carousel-dots';
+      var dots = imgUrls.map(function(_, di) {
+        var d = document.createElement('button');
+        d.className = 'carousel-dot' + (di === 0 ? ' on' : '');
+        return d;
+      });
+      dots.forEach(function(d) { dotsEl.appendChild(d); });
+
+      var cur = 0;
+      function goTo(n) {
+        cur = (n + imgUrls.length) % imgUrls.length;
+        track.style.transform = 'translateX(-' + (cur * 100) + '%)';
+        dots.forEach(function(d, di) { d.className = 'carousel-dot' + (di === cur ? ' on' : ''); });
+      }
+      prevBtn.addEventListener('click', function() { goTo(cur - 1); });
+      nextBtn.addEventListener('click', function() { goTo(cur + 1); });
+      dots.forEach(function(d, di) { d.addEventListener('click', function() { goTo(di); }); });
+
+      ratioBox.appendChild(prevBtn);
+      ratioBox.appendChild(nextBtn);
+      ratioBox.appendChild(dotsEl);
+      imgWrap.appendChild(ratioBox);
+
+      // Carrousel badge
+      var badge2 = document.createElement('div');
+      badge2.className = 'fb-type-badge';
+      badge2.textContent = 'Carrousel · ' + imgUrls.length;
+      imgWrap.appendChild(badge2);
+
+    } else if (hasImgs) {
+      // Single image (or first slide of a 1-image carousel / reel thumbnail)
+      var ratioBox2 = document.createElement('div');
+      ratioBox2.className = 'ratio-box ' + rc;
+      var singleImg = makeImg(imgUrls[0], function() {
+        ratioBox2.innerHTML = '<div class="fb-image-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">IMG</div>';
+      });
+      ratioBox2.appendChild(singleImg);
+      imgWrap.appendChild(ratioBox2);
+
+      if (isReel) {
+        var playBtn = document.createElement('div');
+        playBtn.className = 'reel-play-btn';
+        ratioBox2.style.position = 'relative';
+        ratioBox2.appendChild(playBtn);
+        var reelBadge = document.createElement('div');
+        reelBadge.className = 'fb-type-badge';
+        reelBadge.textContent = 'Reel';
+        imgWrap.appendChild(reelBadge);
+      }
     } else {
       imgWrap.innerHTML = '<div class="fb-image-placeholder">IMG</div>';
     }
@@ -814,8 +1018,6 @@
     var textEl = document.createElement('div');
     textEl.className = 'fb-text';
     textEl.textContent = text || '';
-
-    // "Voir plus" button if text likely overflows
     if (text && text.length > 200) {
       var readMore = document.createElement('span');
       readMore.className = 'fb-read-more';
@@ -838,10 +1040,8 @@
     var stats = document.createElement('div');
     stats.className = 'fb-stats';
     stats.innerHTML =
-      '<div class="fb-reactions">' +
-        '<span style="font-size:15px">👍❤️😮</span>' +
-        '<span style="margin-left:6px">' + fmtNum(likes) + '</span>' +
-      '</div>' +
+      '<div class="fb-reactions"><span style="font-size:15px">👍❤️😮</span>' +
+      '<span style="margin-left:6px">' + fmtNum(likes) + '</span></div>' +
       '<div>' + comments + ' commentaires · ' + shares + ' partages</div>';
     card.appendChild(stats);
 
@@ -849,18 +1049,9 @@
     var actions = document.createElement('div');
     actions.className = 'fb-actions';
     actions.innerHTML =
-      '<button class="fb-action-btn">' +
-        '<svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>' +
-        "J'aime" +
-      '</button>' +
-      '<button class="fb-action-btn">' +
-        '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
-        'Commenter' +
-      '</button>' +
-      '<button class="fb-action-btn">' +
-        '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
-        'Partager' +
-      '</button>';
+      '<button class="fb-action-btn"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>J\'aime</button>' +
+      '<button class="fb-action-btn"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Commenter</button>' +
+      '<button class="fb-action-btn"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Partager</button>';
     card.appendChild(actions);
 
     return card;
@@ -871,38 +1062,117 @@
     var headers = rows[0];
     if (!headers) { showError('Le fichier CSV est vide.'); return; }
 
-    var colDay  = findCol(headers, ['day', 'jour']);
-    var colDate = findCol(headers, ['date']);
-    var colText = findCol(headers, ['textefr', 'texte fr', 'text fr', 'texte', 'text', 'caption', 'contenu']);
-    var colImg  = findCol(headers, ['visuel', 'image', 'img', 'photo', 'visual']);
+    // Column detection — candidates-first so specific names win
+    var colClient  = findCol(headers, ['client']);
+    var colMois    = findCol(headers, ['mois', 'month', 'mois ']);
+    var colPlat    = findCol(headers, ['plateforme', 'platform', 'réseau', 'reseau', 'reseaux']);
+    var colDay     = findCol(headers, ['jour', 'day']);
+    var colDate    = findCol(headers, ['date']);
+    var colType    = findCol(headers, ['type']);
+    var colFormat  = findCol(headers, ['format', 'ratio', 'aspect']);
+    var colText    = findCol(headers, ['texte', 'text', 'caption', 'légende', 'legende']);
 
-    if (colText === -1 && colImg === -1) {
-      // Best-effort: just use all columns
-      colText = 0;
+    // All VISUEL_* columns (find every col whose header contains 'visuel')
+    var colImgs = [];
+    for (var hi = 0; hi < headers.length; hi++) {
+      if (headers[hi] && headers[hi].toLowerCase().replace(/[\s_\-]/g,'').indexOf('visuel') !== -1) {
+        colImgs.push(hi);
+      }
+    }
+    // Fallback: also check for 'image', 'img', 'photo', 'visual' if no visuel columns found
+    if (colImgs.length === 0) {
+      var fb = findCol(headers, ['image', 'img', 'photo', 'visual', 'media']);
+      if (fb >= 0) colImgs.push(fb);
     }
 
-    grid.innerHTML = '';
-    var count = 0;
+    // No usable columns at all
+    if (colText === -1 && colImgs.length === 0) {
+      showError('Colonnes introuvables. Vérifiez que votre feuille suit le modèle fourni (colonnes TEXTE, VISUEL_1, etc.)');
+      return;
+    }
 
+    // Read client name & month from first data row
+    var firstRow = rows[1] || [];
+    var clientName = cell(firstRow, colClient) || 'Flash Décor';
+    var mois = cell(firstRow, colMois);
+
+    // Update page header dynamically
+    var eyebrow = document.querySelector('.page-eyebrow');
+    var subtitle = document.querySelector('.page-subtitle');
+    if (eyebrow) eyebrow.textContent = '// CLIENT : ' + clientName.toUpperCase();
+    if (subtitle && mois) subtitle.textContent = 'Calendrier de contenu — ' + mois;
+
+    // Collect all posts
+    var allPosts = [];
     for (var i = 1; i < rows.length; i++) {
       var row = rows[i];
       if (!row) continue;
 
-      var day     = ((colDay  >= 0 ? row[colDay]  : '') || '').trim();
-      var date    = ((colDate >= 0 ? row[colDate] : '') || '').trim();
-      var text    = ((colText >= 0 ? row[colText] : '') || '').trim();
-      var rawImg  = ((colImg  >= 0 ? row[colImg]  : '') || '').trim();
-      var img     = resolveImage(rawImg);
+      var text = cell(row, colText);
+      var imgUrls = colImgs.map(function(ci) { return resolveImage(cell(row, ci)); }).filter(Boolean);
 
-      // Only render rows that have actual post content
-      if (!text && !img) continue;
+      if (!text && imgUrls.length === 0) continue;
 
-      grid.appendChild(buildCard(day, date, text, img));
-      count++;
+      allPosts.push({
+        client: clientName,
+        day:    cell(row, colDay),
+        date:   cell(row, colDate),
+        plat:   cell(row, colPlat),
+        type:   cell(row, colType),
+        format: cell(row, colFormat),
+        text:   text,
+        imgs:   imgUrls
+      });
     }
 
-    postCount.textContent = count;
-    setStatus('ok', count + ' publication' + (count !== 1 ? 's' : '') + ' chargée' + (count !== 1 ? 's' : '') + ' ✓');
+    // Build platform tabs
+    var platforms = [];
+    allPosts.forEach(function(p) { if (p.plat && platforms.indexOf(p.plat) === -1) platforms.push(p.plat); });
+
+    var tabsEl = document.getElementById('platform-tabs');
+    tabsEl.innerHTML = '';
+    var activePlat = 'all';
+
+    function renderGrid(filterPlat) {
+      activePlat = filterPlat;
+      // Update tab highlight
+      tabsEl.querySelectorAll('.ptab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.plat === filterPlat);
+      });
+      grid.innerHTML = '';
+      var count = 0;
+      allPosts.forEach(function(p) {
+        if (filterPlat !== 'all' && p.plat !== filterPlat) return;
+        grid.appendChild(buildCard(p.client, p.day, p.date, p.text, p.imgs, p.type, p.format));
+        count++;
+      });
+      postCount.textContent = count;
+      setStatus('ok', count + ' publication' + (count !== 1 ? 's' : '') + ' chargée' + (count !== 1 ? 's' : '') + ' ✓');
+    }
+
+    if (platforms.length > 1) {
+      tabsEl.style.display = 'flex';
+      // "Tout" tab
+      var allTab = document.createElement('button');
+      allTab.className = 'ptab active';
+      allTab.textContent = 'Tout';
+      allTab.dataset.plat = 'all';
+      allTab.addEventListener('click', function() { renderGrid('all'); });
+      tabsEl.appendChild(allTab);
+      // Per-platform tabs
+      platforms.forEach(function(plat) {
+        var tab = document.createElement('button');
+        tab.className = 'ptab';
+        tab.textContent = plat;
+        tab.dataset.plat = plat;
+        tab.addEventListener('click', function() { renderGrid(plat); });
+        tabsEl.appendChild(tab);
+      });
+    } else {
+      tabsEl.style.display = 'none';
+    }
+
+    renderGrid('all');
   }
 
   // ── STATUS ──
