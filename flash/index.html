@@ -630,6 +630,7 @@
   /* ── ASPECT RATIO WRAPPER ── */
   .ratio-box { position: relative; width: 100%; overflow: hidden; background: #111; }
   .ratio-box img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ratio-box video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; background: #111; }
   .imgur-album-host {
     position: absolute;
     inset: 0;
@@ -920,6 +921,16 @@
     };
   }
 
+  function parseDirectVideo(val) {
+    var url = String(val || '').trim();
+    if (!url) return null;
+    if (!/^https?:\/\/i\.imgur\.com\/.+\.(mp4|webm)(\?.*)?$/i.test(url)) return null;
+    return {
+      kind: 'video',
+      url: url
+    };
+  }
+
   function looksLikeDayNumber(val) {
     var s = String(val || '').trim();
     if (!s) return false;
@@ -1011,6 +1022,9 @@
     // Must be a URL — plain text ("Montage photo", etc.) returns null
     if (!val.match(/^https?:\/\//i)) return null;
 
+    var video = parseDirectVideo(val);
+    if (video) return video;
+
     // Google Drive — /d/ID format (file/d/ID or open?id=ID)
     var driveId = null;
     var m = val.match(/\/d\/([a-zA-Z0-9_\-]{10,})/);
@@ -1076,6 +1090,22 @@
     return img;
   }
 
+  function makeVideo(src, onerrorFn) {
+    var video = document.createElement('video');
+    video.src = src;
+    video.muted = true;
+    video.loop = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.setAttribute('muted', '');
+    video.setAttribute('loop', '');
+    video.setAttribute('autoplay', '');
+    video.setAttribute('playsinline', '');
+    video.preload = 'metadata';
+    if (onerrorFn) video.onerror = onerrorFn;
+    return video;
+  }
+
   function makeMediaNode(item, onerrorFn) {
     if (item && typeof item === 'object' && item.kind === 'imgur-album') {
       var host = document.createElement('div');
@@ -1085,6 +1115,9 @@
           '<a href="' + item.url + '">Voir sur Imgur</a>' +
         '</blockquote>';
       return host;
+    }
+    if (item && typeof item === 'object' && item.kind === 'video') {
+      return makeVideo(item.url, onerrorFn);
     }
     return makeImg(item, onerrorFn);
   }
@@ -1156,11 +1189,11 @@
     imgWrap.className = 'fb-image-wrap';
     imgWrap.style.position = 'relative';
 
-    var allDirectImages = imgUrls.every(function(item) {
+    var allDirectMedia = imgUrls.every(function(item) {
       return !(item && typeof item === 'object' && item.kind === 'imgur-album');
     });
 
-    if (isCarousel && imgUrls.length > 1 && allDirectImages) {
+    if (isCarousel && imgUrls.length > 1 && allDirectMedia) {
       // Multi-slide carousel
       var ratioBox = document.createElement('div');
       ratioBox.className = 'ratio-box ' + rc;
