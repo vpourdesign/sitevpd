@@ -700,11 +700,16 @@
   }
 
   // ── COLUMN FINDER ──
+  // Iterates candidates first (most specific → least) so 'textefr' wins
+  // over 'contenu' even if a column like "Type de contenu" appears first.
   function findCol(headers, candidates) {
-    for (var i = 0; i < headers.length; i++) {
-      var h = headers[i].toLowerCase().replace(/[\s_-]/g, '');
-      for (var k = 0; k < candidates.length; k++) {
-        if (h.indexOf(candidates[k].toLowerCase().replace(/[\s_-]/g, '')) !== -1) return i;
+    var normalized = headers.map(function(h) {
+      return h.toLowerCase().replace(/[\s_\-]/g, '');
+    });
+    for (var k = 0; k < candidates.length; k++) {
+      var c = candidates[k].toLowerCase().replace(/[\s_\-]/g, '');
+      for (var i = 0; i < normalized.length; i++) {
+        if (normalized[i].indexOf(c) !== -1) return i;
       }
     }
     return -1;
@@ -715,24 +720,28 @@
     if (!val) return null;
     val = val.trim();
     if (!val) return null;
-    // Google Drive share link: /d/<id> or /file/d/<id>
-    var driveMatch = val.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-    if (driveMatch) {
-      return 'https://drive.google.com/thumbnail?id=' + driveMatch[1] + '&sz=w600';
+    // Must be a URL — plain text ("Montage photo", etc.) returns null
+    if (!val.match(/^https?:\/\//i)) return null;
+
+    // Google Drive — /d/ID format (file/d/ID or open?id=ID)
+    var driveId = null;
+    var m = val.match(/\/d\/([a-zA-Z0-9_\-]{10,})/);
+    if (m) driveId = m[1];
+    if (!driveId) {
+      m = val.match(/[?&]id=([a-zA-Z0-9_\-]{10,})/);
+      if (m) driveId = m[1];
     }
-    // Imgur gallery link → direct image
-    // e.g. https://imgur.com/AbCdEfG  →  https://i.imgur.com/AbCdEfG.jpg
-    var imgurGallery = val.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)(?:\.[a-z]+)?$/);
-    if (imgurGallery) {
-      var ext = imgurGallery[1].indexOf('.') === -1 ? '.jpg' : '';
-      return 'https://i.imgur.com/' + imgurGallery[1] + ext;
+    if (driveId) {
+      // lh3 serves Drive images directly for publicly shared files
+      return 'https://lh3.googleusercontent.com/d/' + driveId;
     }
-    // Already a direct imgur image (i.imgur.com)
-    if (val.match(/^https?:\/\/i\.imgur\.com\//)) return val;
-    // Any other full URL
-    if (val.startsWith('http://') || val.startsWith('https://')) return val;
-    // Relative path assumed
-    return '../images/' + val;
+
+    // Imgur gallery → direct image
+    m = val.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)(?:\.[a-z]+)?$/);
+    if (m) return 'https://i.imgur.com/' + m[1] + '.jpg';
+
+    // Pass all other URLs through; onerror fallback shows placeholder
+    return val;
   }
 
   // ── DATE FORMATTER ──
@@ -877,14 +886,15 @@
 
     for (var i = 1; i < rows.length; i++) {
       var row = rows[i];
-      if (!row || row.every(function(c){ return !c; })) continue;
+      if (!row) continue;
 
-      var day  = colDay  >= 0 ? row[colDay]  : '';
-      var date = colDate >= 0 ? row[colDate] : '';
-      var text = colText >= 0 ? row[colText] : '';
-      var img  = colImg  >= 0 ? resolveImage(row[colImg]) : null;
+      var day     = ((colDay  >= 0 ? row[colDay]  : '') || '').trim();
+      var date    = ((colDate >= 0 ? row[colDate] : '') || '').trim();
+      var text    = ((colText >= 0 ? row[colText] : '') || '').trim();
+      var rawImg  = ((colImg  >= 0 ? row[colImg]  : '') || '').trim();
+      var img     = resolveImage(rawImg);
 
-      // Skip rows that have no actual content (just a date/day but nothing to show)
+      // Only render rows that have actual post content
       if (!text && !img) continue;
 
       grid.appendChild(buildCard(day, date, text, img));
