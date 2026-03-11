@@ -877,6 +877,43 @@
     return '';
   }
 
+  function looksLikeDayNumber(val) {
+    var s = String(val || '').trim();
+    if (!s) return false;
+    if (!/^\d{1,2}$/.test(s)) return false;
+    var n = parseInt(s, 10);
+    return n >= 1 && n <= 31;
+  }
+
+  function inferDateCol(headers, rows, headerRowIndex, colDay) {
+    var explicit = findCol(headers, ['date']);
+    if (explicit !== -1) return explicit;
+    if (colDay === -1) return -1;
+
+    var candidates = [colDay + 1, colDay - 1].filter(function(idx) {
+      return idx >= 0 && idx < headers.length;
+    });
+
+    for (var c = 0; c < candidates.length; c++) {
+      var idx = candidates[c];
+      var score = 0;
+      var checked = 0;
+      for (var i = headerRowIndex + 1; i < rows.length && checked < 12; i++) {
+        var row = rows[i];
+        if (!rowHasContent(row)) continue;
+        var val = cell(row, idx);
+        var text = cell(row, findCol(headers, ['text fr', 'texte fr', 'texte', 'text', 'caption', 'légende', 'legende']));
+        var img = cell(row, findCol(headers, ['visuel', 'image', 'img', 'photo', 'visual', 'media']));
+        if (!val && !text && !img) continue;
+        checked++;
+        if (looksLikeDayNumber(val)) score++;
+      }
+      if (checked > 0 && score / checked >= 0.6) return idx;
+    }
+
+    return -1;
+  }
+
   function detectSheetConfig(rows) {
     var headerRowIndex = -1;
     var meta = { client: '', mois: '', defaultPlatform: '' };
@@ -905,7 +942,7 @@
       var hasDate = findCol(row, ['date']) !== -1;
       var hasText = findCol(row, ['text fr', 'texte fr', 'texte', 'text', 'caption', 'legende']) !== -1;
       var hasVisuel = findCol(row, ['visuel', 'image', 'img', 'photo', 'visual', 'media']) !== -1;
-      if (hasJour && hasDate && (hasText || hasVisuel)) {
+      if (hasJour && (hasDate || hasText || hasVisuel)) {
         headerRowIndex = i;
         break;
       }
@@ -1177,7 +1214,7 @@
     // Column detection — candidates-first so specific names win
     var colPlat    = findCol(headers, ['plateforme', 'platform', 'réseau', 'reseau', 'reseaux']);
     var colDay     = findCol(headers, ['jour', 'day']);
-    var colDate    = findCol(headers, ['date']);
+    var colDate    = inferDateCol(headers, rows, sheet.headerRowIndex, colDay);
     var colType    = findCol(headers, ['type']);
     var colFormat  = findCol(headers, ['format', 'ratio', 'aspect']);
     var colText    = findCol(headers, ['text fr', 'texte fr', 'texte', 'text', 'caption', 'légende', 'legende']);
@@ -1197,7 +1234,7 @@
 
     // No usable columns at all
     if (colText === -1 && colImgs.length === 0) {
-      showError('Colonnes introuvables. Vérifiez que votre feuille suit le modèle fourni (colonnes TEXTE, VISUEL_1, etc.)');
+      showError('Colonnes introuvables. Vérifiez que votre feuille suit le modèle fourni (TEXT FR/TEXTE FR et VISUEL).');
       return;
     }
 
@@ -1305,6 +1342,12 @@
       .then(function(res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.text();
+      })
+      .then(function(text) {
+        if (/<!doctype html/i.test(text) || /<html/i.test(text)) {
+          throw new Error('HTML reçu au lieu du CSV');
+        }
+        return text;
       });
   }
 
@@ -1314,10 +1357,10 @@
     errorEl.classList.remove('visible');
     setStatus('loading', 'Chargement en cours…');
 
-    fetchSheet(CSV_URL)
+    fetchSheet(CSV_URL2)
       .catch(function() {
         // Try alternate endpoint
-        return fetchSheet(CSV_URL2);
+        return fetchSheet(CSV_URL);
       })
       .then(function(csv) {
         loadingEl.classList.remove('visible');
