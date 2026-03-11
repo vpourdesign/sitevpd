@@ -582,7 +582,7 @@
 <!-- PAGE HEADER -->
 <div id="page-header">
   <div class="page-title-block">
-    <div class="page-eyebrow">// CLIENT : PROBACLAC</div>
+    <div class="page-eyebrow">// CLIENT : FLASH DÉCOR</div>
     <div class="page-title">FLASH</div>
     <div class="page-subtitle">Calendrier de contenu &mdash; Publications sociales du mois</div>
   </div>
@@ -715,12 +715,21 @@
     if (!val) return null;
     val = val.trim();
     if (!val) return null;
-    // Google Drive share link
+    // Google Drive share link: /d/<id> or /file/d/<id>
     var driveMatch = val.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
     if (driveMatch) {
       return 'https://drive.google.com/thumbnail?id=' + driveMatch[1] + '&sz=w600';
     }
-    // Full URL
+    // Imgur gallery link → direct image
+    // e.g. https://imgur.com/AbCdEfG  →  https://i.imgur.com/AbCdEfG.jpg
+    var imgurGallery = val.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)(?:\.[a-z]+)?$/);
+    if (imgurGallery) {
+      var ext = imgurGallery[1].indexOf('.') === -1 ? '.jpg' : '';
+      return 'https://i.imgur.com/' + imgurGallery[1] + ext;
+    }
+    // Already a direct imgur image (i.imgur.com)
+    if (val.match(/^https?:\/\/i\.imgur\.com\//)) return val;
+    // Any other full URL
     if (val.startsWith('http://') || val.startsWith('https://')) return val;
     // Relative path assumed
     return '../images/' + val;
@@ -753,12 +762,12 @@
 
     var avatar = document.createElement('div');
     avatar.className = 'fb-avatar';
-    avatar.innerHTML = '<img src="../projets/probaclac/hero.jpg" alt="Probaclac" onerror="this.parentNode.innerHTML=\'VPD\'">';
+    avatar.innerHTML = 'FD';
 
     var meta = document.createElement('div');
     meta.className = 'fb-meta';
     meta.innerHTML =
-      '<div class="fb-page-name">Probaclac</div>' +
+      '<div class="fb-page-name">Flash Décor</div>' +
       '<div class="fb-date-row">' +
         '<span class="fb-post-date">' + formatPostDate(day, date) + '</span>' +
         '<svg class="fb-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' +
@@ -874,6 +883,9 @@
       var date = colDate >= 0 ? row[colDate] : '';
       var text = colText >= 0 ? row[colText] : '';
       var img  = colImg  >= 0 ? resolveImage(row[colImg]) : null;
+
+      // Skip rows that have no actual content (just a date/day but nothing to show)
+      if (!text && !img) continue;
 
       grid.appendChild(buildCard(day, date, text, img));
       count++;
