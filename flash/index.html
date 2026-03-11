@@ -630,6 +630,22 @@
   /* ── ASPECT RATIO WRAPPER ── */
   .ratio-box { position: relative; width: 100%; overflow: hidden; background: #111; }
   .ratio-box img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .imgur-album-host {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: #111;
+  }
+  .imgur-album-host blockquote,
+  .imgur-album-host iframe,
+  .imgur-album-host .imgur-embed-iframe-pub {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
   .ratio-1-1  { padding-bottom: 100%; }
   .ratio-4-5  { padding-bottom: 125%; }
   .ratio-9-16 { padding-bottom: 177.78%; }
@@ -875,6 +891,17 @@
     return '';
   }
 
+  function parseImgurAlbum(val) {
+    var m = String(val || '').trim().match(/^https?:\/\/(?:www\.)?imgur\.com\/(a|gallery)\/([a-zA-Z0-9]+)/i);
+    if (!m) return null;
+    return {
+      kind: 'imgur-album',
+      albumType: m[1].toLowerCase(),
+      id: m[2],
+      url: String(val || '').trim()
+    };
+  }
+
   function looksLikeDayNumber(val) {
     var s = String(val || '').trim();
     if (!s) return false;
@@ -980,8 +1007,9 @@
     m = val.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)(?:\.[a-z]+)?$/);
     if (m) return 'https://i.imgur.com/' + m[1] + '.jpg';
 
-    // Imgur albums/galleries are HTML pages, not image files.
-    if (val.match(/^https?:\/\/(?:www\.)?imgur\.com\/(?:a|gallery)\//i)) return null;
+    // Imgur albums/galleries need an embed, not an <img>.
+    var album = parseImgurAlbum(val);
+    if (album) return album;
 
     // Pass all other URLs through; onerror fallback shows placeholder
     return val;
@@ -1007,6 +1035,33 @@
     img.loading = 'lazy';
     if (onerrorFn) img.onerror = onerrorFn;
     return img;
+  }
+
+  function makeMediaNode(item, onerrorFn) {
+    if (item && typeof item === 'object' && item.kind === 'imgur-album') {
+      var host = document.createElement('div');
+      host.className = 'imgur-album-host';
+      host.innerHTML =
+        '<blockquote class="imgur-embed-pub" lang="en" data-id="' + item.albumType + '/' + item.id + '">' +
+          '<a href="' + item.url + '">Voir sur Imgur</a>' +
+        '</blockquote>';
+      return host;
+    }
+    return makeImg(item, onerrorFn);
+  }
+
+  function refreshImgurEmbeds() {
+    var hasEmbed = document.querySelector('.imgur-embed-pub');
+    if (!hasEmbed) return;
+
+    var old = document.getElementById('imgur-embed-script');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+
+    var script = document.createElement('script');
+    script.id = 'imgur-embed-script';
+    script.async = true;
+    script.src = 'https://s.imgur.com/min/embed.js';
+    document.body.appendChild(script);
   }
 
   // ── BUILD CARD ──
@@ -1061,7 +1116,11 @@
     imgWrap.className = 'fb-image-wrap';
     imgWrap.style.position = 'relative';
 
-    if (isCarousel && imgUrls.length > 1) {
+    var allDirectImages = imgUrls.every(function(item) {
+      return !(item && typeof item === 'object' && item.kind === 'imgur-album');
+    });
+
+    if (isCarousel && imgUrls.length > 1 && allDirectImages) {
       // Multi-slide carousel
       var ratioBox = document.createElement('div');
       ratioBox.className = 'ratio-box ' + rc;
@@ -1078,7 +1137,7 @@
         var slide = document.createElement('div');
         slide.className = 'carousel-slide';
         slide.style.height = '100%';
-        var sImg = makeImg(src, function() { slide.innerHTML = '<div class="fb-image-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">IMG</div>'; });
+        var sImg = makeMediaNode(src, function() { slide.innerHTML = '<div class="fb-image-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">IMG</div>'; });
         sImg.style.position = 'absolute';
         sImg.style.inset = '0';
         sImg.style.width = '100%';
@@ -1132,7 +1191,7 @@
       // Single image (or first slide of a 1-image carousel / reel thumbnail)
       var ratioBox2 = document.createElement('div');
       ratioBox2.className = 'ratio-box ' + rc;
-      var singleImg = makeImg(imgUrls[0], function() {
+      var singleImg = makeMediaNode(imgUrls[0], function() {
         ratioBox2.innerHTML = '<div class="fb-image-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">IMG</div>';
       });
       ratioBox2.appendChild(singleImg);
@@ -1297,6 +1356,7 @@
         grid.appendChild(buildCard(p.client, p.day, p.date, p.text, p.imgs, p.type, p.format));
         count++;
       });
+      refreshImgurEmbeds();
       postCount.textContent = count;
       setStatus('ok', count + ' publication' + (count !== 1 ? 's' : '') + ' chargée' + (count !== 1 ? 's' : '') + ' ✓');
     }
