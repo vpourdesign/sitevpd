@@ -1081,6 +1081,26 @@
     return 'ratio-1-1';
   }
 
+  function resolveRatioClass(type, format, imgUrls) {
+    if (hasExplicitRatio(format)) return ratioClass(format);
+
+    var typeLow = String(type || '').toLowerCase().trim();
+    var formatLow = String(format || '').toLowerCase().trim();
+
+    if (typeLow === 'reel' || typeLow === 'reels' || typeLow === 'story' ||
+        formatLow === 'reel' || formatLow === 'reels' || formatLow === 'story') {
+      return 'ratio-9-16';
+    }
+
+    if (typeLow === 'carrousel' || typeLow === 'carousel' || typeLow === 'feed' ||
+        formatLow === 'carrousel' || formatLow === 'carousel' || formatLow === 'feed') {
+      return 'ratio-4-5';
+    }
+
+    if ((imgUrls || []).length > 1) return 'ratio-4-5';
+    return 'ratio-1-1';
+  }
+
   function hasExplicitRatio(fmt) {
     if (!fmt) return false;
     var f = String(fmt).replace(/\s/g, '').toLowerCase();
@@ -1196,7 +1216,7 @@
     var formatLow = (format || '').toLowerCase().trim();
     var isReel = typeLow === 'reel' || typeLow === 'reels' || formatLow === 'reel' || formatLow === 'reels' || formatLow === 'story';
     var isCarousel = typeLow === 'carrousel' || typeLow === 'carousel' || (!isReel && imgUrls.length > 1);
-    var rc = ratioClass(format);
+    var rc = resolveRatioClass(type, format, imgUrls);
     var hasImgs = imgUrls.length > 0;
 
     var card = document.createElement('div');
@@ -1249,7 +1269,7 @@
       var ratioBox = document.createElement('div');
       ratioBox.className = 'ratio-box ' + rc;
       ratioBox.style.overflow = 'hidden';
-      enableAutoRatio(ratioBox, typeof imgUrls[0] === 'string' ? imgUrls[0] : null, format);
+      enableAutoRatio(ratioBox, typeof imgUrls[0] === 'string' ? imgUrls[0] : null, hasExplicitRatio(format) ? format : '');
 
       var track = document.createElement('div');
       track.className = 'carousel-track';
@@ -1316,7 +1336,7 @@
       // Single image (or first slide of a 1-image carousel / reel thumbnail)
       var ratioBox2 = document.createElement('div');
       ratioBox2.className = 'ratio-box ' + rc;
-      enableAutoRatio(ratioBox2, typeof imgUrls[0] === 'string' ? imgUrls[0] : null, format);
+      enableAutoRatio(ratioBox2, typeof imgUrls[0] === 'string' ? imgUrls[0] : null, hasExplicitRatio(format) ? format : '');
       var singleImg = makeMediaNode(imgUrls[0], function() {
         ratioBox2.innerHTML = '<div class="fb-image-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">IMG</div>';
       });
