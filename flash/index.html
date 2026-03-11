@@ -776,28 +776,51 @@
   // ── CSV PARSER ──
   function parseCSV(text) {
     var rows = [];
-    var lines = text.split(/\r?\n/);
-    for (var i = 0; i < lines.length; i++) {
-      var line = lines[i];
-      if (!line.trim()) continue;
-      var row = [];
-      var inQuote = false;
-      var cell = '';
-      for (var j = 0; j < line.length; j++) {
-        var ch = line[j];
-        if (ch === '"') {
-          if (inQuote && line[j+1] === '"') { cell += '"'; j++; }
-          else { inQuote = !inQuote; }
-        } else if (ch === ',' && !inQuote) {
-          row.push(cell.trim());
-          cell = '';
+    var row = [];
+    var cell = '';
+    var inQuote = false;
+
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      var next = text[i + 1];
+
+      if (ch === '"') {
+        if (inQuote && next === '"') {
+          cell += '"';
+          i++;
         } else {
-          cell += ch;
+          inQuote = !inQuote;
         }
+        continue;
       }
-      row.push(cell.trim());
-      rows.push(row);
+
+      if (ch === ',' && !inQuote) {
+        row.push(cell.trim());
+        cell = '';
+        continue;
+      }
+
+      if ((ch === '\n' || ch === '\r') && !inQuote) {
+        if (ch === '\r' && next === '\n') i++;
+        row.push(cell.trim());
+        cell = '';
+        if (row.some(function(val) { return String(val || '').trim() !== ''; })) {
+          rows.push(row);
+        }
+        row = [];
+        continue;
+      }
+
+      cell += ch;
     }
+
+    if (cell.length || row.length) {
+      row.push(cell.trim());
+      if (row.some(function(val) { return String(val || '').trim() !== ''; })) {
+        rows.push(row);
+      }
+    }
+
     return rows;
   }
 
@@ -815,6 +838,83 @@
       }
     }
     return -1;
+  }
+
+  function normalizeText(val) {
+    return String(val || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[\s_\-]/g, '')
+      .trim();
+  }
+
+  function rowHasContent(row) {
+    if (!row || !row.length) return false;
+    for (var i = 0; i < row.length; i++) {
+      if (String(row[i] || '').trim() !== '') return true;
+    }
+    return false;
+  }
+
+  function rowValues(row) {
+    return (row || []).map(function(val) { return String(val || '').trim(); }).filter(Boolean);
+  }
+
+  function shortPlatformName(platform) {
+    var p = normalizeText(platform);
+    if (p === 'facebook' || p === 'fb') return 'FB';
+    if (p === 'instagram' || p === 'ig') return 'IG';
+    return String(platform || '').trim().toUpperCase();
+  }
+
+  function inferPlatformLabel(values) {
+    for (var i = 0; i < values.length; i++) {
+      var n = normalizeText(values[i]);
+      if (n === 'facebook' || n === 'fb') return 'Facebook';
+      if (n === 'instagram' || n === 'ig') return 'Instagram';
+    }
+    return '';
+  }
+
+  function detectSheetConfig(rows) {
+    var headerRowIndex = -1;
+    var meta = { client: '', mois: '', defaultPlatform: '' };
+
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      if (!rowHasContent(row)) continue;
+
+      var values = rowValues(row);
+      var first = normalizeText(values[0]);
+
+      if (!meta.client && first === 'nomclient') {
+        meta.client = values[1] || values[0] || '';
+        continue;
+      }
+      if (!meta.mois && first === 'mois') {
+        meta.mois = values[1] || '';
+        continue;
+      }
+      if (!meta.defaultPlatform) {
+        var platform = inferPlatformLabel(values);
+        if (platform) meta.defaultPlatform = platform;
+      }
+
+      var hasJour = findCol(row, ['jour', 'day']) !== -1;
+      var hasDate = findCol(row, ['date']) !== -1;
+      var hasText = findCol(row, ['text fr', 'texte fr', 'texte', 'text', 'caption', 'legende']) !== -1;
+      var hasVisuel = findCol(row, ['visuel', 'image', 'img', 'photo', 'visual', 'media']) !== -1;
+      if (hasJour && hasDate && (hasText || hasVisuel)) {
+        headerRowIndex = i;
+        break;
+      }
+    }
+
+    return {
+      headerRowIndex: headerRowIndex,
+      meta: meta
+    };
   }
 
   // ── IMAGE URL RESOLVER ──
@@ -838,9 +938,15 @@
       return 'https://lh3.googleusercontent.com/d/' + driveId;
     }
 
-    // Imgur gallery → direct image
+    // Direct Imgur asset
+    if (val.match(/^https?:\/\/i\.imgur\.com\/.+/i)) return val;
+
+    // Simple Imgur page → direct image
     m = val.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)(?:\.[a-z]+)?$/);
     if (m) return 'https://i.imgur.com/' + m[1] + '.jpg';
+
+    // Imgur albums/galleries are HTML pages, not image files.
+    if (val.match(/^https?:\/\/(?:www\.)?imgur\.com\/(?:a|gallery)\//i)) return null;
 
     // Pass all other URLs through; onerror fallback shows placeholder
     return val;
@@ -1059,18 +1165,22 @@
 
   // ── RENDER ──
   function renderPosts(rows) {
-    var headers = rows[0];
+    var sheet = detectSheetConfig(rows);
+    if (sheet.headerRowIndex === -1) {
+      showError('En-tête introuvable. La feuille doit contenir au minimum les colonnes JOUR, DATE, TEXT FR/TEXTE FR et VISUEL.');
+      return;
+    }
+
+    var headers = rows[sheet.headerRowIndex];
     if (!headers) { showError('Le fichier CSV est vide.'); return; }
 
     // Column detection — candidates-first so specific names win
-    var colClient  = findCol(headers, ['client']);
-    var colMois    = findCol(headers, ['mois', 'month', 'mois ']);
     var colPlat    = findCol(headers, ['plateforme', 'platform', 'réseau', 'reseau', 'reseaux']);
     var colDay     = findCol(headers, ['jour', 'day']);
     var colDate    = findCol(headers, ['date']);
     var colType    = findCol(headers, ['type']);
     var colFormat  = findCol(headers, ['format', 'ratio', 'aspect']);
-    var colText    = findCol(headers, ['texte', 'text', 'caption', 'légende', 'legende']);
+    var colText    = findCol(headers, ['text fr', 'texte fr', 'texte', 'text', 'caption', 'légende', 'legende']);
 
     // All VISUEL_* columns (find every col whose header contains 'visuel')
     var colImgs = [];
@@ -1091,33 +1201,39 @@
       return;
     }
 
-    // Read client name & month from first data row
-    var firstRow = rows[1] || [];
-    var clientName = cell(firstRow, colClient) || 'Flash Décor';
-    var mois = cell(firstRow, colMois);
+    var clientName = sheet.meta.client || 'Flash Décor';
+    var mois = sheet.meta.mois || '';
+    var defaultPlatform = sheet.meta.defaultPlatform || '';
 
     // Update page header dynamically
     var eyebrow = document.querySelector('.page-eyebrow');
+    var title = document.querySelector('.page-title');
     var subtitle = document.querySelector('.page-subtitle');
     if (eyebrow) eyebrow.textContent = '// CLIENT : ' + clientName.toUpperCase();
-    if (subtitle && mois) subtitle.textContent = 'Calendrier de contenu — ' + mois;
+    if (title) title.textContent = clientName.toUpperCase();
+    if (subtitle) subtitle.textContent = 'Calendrier de contenu social';
+    document.title = clientName.toUpperCase() + ' :: FLASH :: VPOURDESIGN';
 
     // Collect all posts
     var allPosts = [];
-    for (var i = 1; i < rows.length; i++) {
+    for (var i = sheet.headerRowIndex + 1; i < rows.length; i++) {
       var row = rows[i];
-      if (!row) continue;
+      if (!rowHasContent(row)) continue;
 
       var text = cell(row, colText);
       var imgUrls = colImgs.map(function(ci) { return resolveImage(cell(row, ci)); }).filter(Boolean);
+      var day = cell(row, colDay);
+      var date = cell(row, colDate);
+      var platform = cell(row, colPlat) || defaultPlatform;
 
+      if (!day && !date && !text && imgUrls.length === 0) continue;
       if (!text && imgUrls.length === 0) continue;
 
       allPosts.push({
         client: clientName,
-        day:    cell(row, colDay),
-        date:   cell(row, colDate),
-        plat:   cell(row, colPlat),
+        day:    day,
+        date:   date,
+        plat:   platform,
         type:   cell(row, colType),
         format: cell(row, colFormat),
         text:   text,
@@ -1150,20 +1266,12 @@
       setStatus('ok', count + ' publication' + (count !== 1 ? 's' : '') + ' chargée' + (count !== 1 ? 's' : '') + ' ✓');
     }
 
-    if (platforms.length > 1) {
+    if (platforms.length > 0) {
       tabsEl.style.display = 'flex';
-      // "Tout" tab
-      var allTab = document.createElement('button');
-      allTab.className = 'ptab active';
-      allTab.textContent = 'Tout';
-      allTab.dataset.plat = 'all';
-      allTab.addEventListener('click', function() { renderGrid('all'); });
-      tabsEl.appendChild(allTab);
-      // Per-platform tabs
       platforms.forEach(function(plat) {
         var tab = document.createElement('button');
-        tab.className = 'ptab';
-        tab.textContent = plat;
+        tab.className = 'ptab' + (tabsEl.children.length === 0 ? ' active' : '');
+        tab.textContent = shortPlatformName(plat) + (mois ? ' ' + mois : '');
         tab.dataset.plat = plat;
         tab.addEventListener('click', function() { renderGrid(plat); });
         tabsEl.appendChild(tab);
@@ -1172,7 +1280,7 @@
       tabsEl.style.display = 'none';
     }
 
-    renderGrid('all');
+    renderGrid(platforms[0] || 'all');
   }
 
   // ── STATUS ──
