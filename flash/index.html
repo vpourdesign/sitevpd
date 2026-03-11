@@ -1081,6 +1081,57 @@
     return 'ratio-1-1';
   }
 
+  function hasExplicitRatio(fmt) {
+    if (!fmt) return false;
+    var f = String(fmt).replace(/\s/g, '').toLowerCase();
+    return f === '1:1' || f === '11' || f === '4:5' || f === '45' || f === '9:16' || f === '916';
+  }
+
+  function ratioClassFromDimensions(width, height) {
+    if (!width || !height) return 'ratio-1-1';
+    var ratio = width / height;
+    var targets = [
+      { name: 'ratio-1-1', value: 1 },
+      { name: 'ratio-4-5', value: 4 / 5 },
+      { name: 'ratio-9-16', value: 9 / 16 }
+    ];
+    var best = targets[0];
+    var bestDiff = Math.abs(ratio - best.value);
+    for (var i = 1; i < targets.length; i++) {
+      var diff = Math.abs(ratio - targets[i].value);
+      if (diff < bestDiff) {
+        best = targets[i];
+        bestDiff = diff;
+      }
+    }
+    return best.name;
+  }
+
+  function setRatioBoxClass(ratioBox, ratioName) {
+    ratioBox.classList.remove('ratio-1-1', 'ratio-4-5', 'ratio-9-16');
+    ratioBox.classList.add(ratioName || 'ratio-1-1');
+  }
+
+  function enableAutoRatio(ratioBox, item, explicitFormat) {
+    if (hasExplicitRatio(explicitFormat) || !item || typeof item !== 'string') return;
+
+    if (/\.(mp4|webm)(\?.*)?$/i.test(item)) {
+      var probeVideo = document.createElement('video');
+      probeVideo.preload = 'metadata';
+      probeVideo.src = item;
+      probeVideo.addEventListener('loadedmetadata', function() {
+        setRatioBoxClass(ratioBox, ratioClassFromDimensions(probeVideo.videoWidth, probeVideo.videoHeight));
+      });
+      return;
+    }
+
+    var probeImg = new Image();
+    probeImg.onload = function() {
+      setRatioBoxClass(ratioBox, ratioClassFromDimensions(probeImg.naturalWidth, probeImg.naturalHeight));
+    };
+    probeImg.src = item;
+  }
+
   function makeImg(src, onerrorFn) {
     var img = document.createElement('img');
     img.src = src;
@@ -1198,6 +1249,7 @@
       var ratioBox = document.createElement('div');
       ratioBox.className = 'ratio-box ' + rc;
       ratioBox.style.overflow = 'hidden';
+      enableAutoRatio(ratioBox, typeof imgUrls[0] === 'string' ? imgUrls[0] : null, format);
 
       var track = document.createElement('div');
       track.className = 'carousel-track';
@@ -1264,6 +1316,7 @@
       // Single image (or first slide of a 1-image carousel / reel thumbnail)
       var ratioBox2 = document.createElement('div');
       ratioBox2.className = 'ratio-box ' + rc;
+      enableAutoRatio(ratioBox2, typeof imgUrls[0] === 'string' ? imgUrls[0] : null, format);
       var singleImg = makeMediaNode(imgUrls[0], function() {
         ratioBox2.innerHTML = '<div class="fb-image-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">IMG</div>';
       });
