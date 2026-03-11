@@ -734,9 +734,7 @@
 (function() {
   // ── SHEET CONFIG ──
   var SHEET_ID = '1cIQ7NunhjwzgOQSl2edjoeWzkhRpURTwTl2onCf28x0';
-  var CSV_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/export?format=csv&gid=0';
-  // Fallback: gviz endpoint
-  var CSV_URL2 = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv';
+  var GVIZ_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?gid=0';
 
   // ── ELEMENTS ──
   var grid = document.getElementById('flash-grid');
@@ -1336,19 +1334,64 @@
     setStatus('error', 'Erreur de chargement');
   }
 
-  // ── FETCH ──
-  function fetchSheet(url) {
-    return fetch(url, { mode: 'cors', cache: 'no-cache' })
-      .then(function(res) {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.text();
-      })
-      .then(function(text) {
-        if (/<!doctype html/i.test(text) || /<html/i.test(text)) {
-          throw new Error('HTML reçu au lieu du CSV');
+  // ── GOOGLE SHEETS JSONP ──
+  function gvizCellToText(cell) {
+    if (!cell) return '';
+    if (cell.f != null) return String(cell.f).trim();
+    if (cell.v == null) return '';
+    return String(cell.v).trim();
+  }
+
+  function gvizToRows(payload) {
+    if (!payload || payload.status !== 'ok' || !payload.table) {
+      throw new Error('Réponse Google Sheets invalide');
+    }
+
+    var headers = (payload.table.cols || []).map(function(col) {
+      return col && col.label != null ? String(col.label).trim() : '';
+    });
+
+    var rows = [headers];
+    (payload.table.rows || []).forEach(function(row) {
+      var cells = row && row.c ? row.c : [];
+      rows.push(cells.map(gvizCellToText));
+    });
+    return rows;
+  }
+
+  function loadSheetJsonp() {
+    return new Promise(function(resolve, reject) {
+      var cbName = '__flashSheetCb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+      var script = document.createElement('script');
+      var timeout = setTimeout(function() {
+        cleanup();
+        reject(new Error('Timeout Google Sheets'));
+      }, 15000);
+
+      function cleanup() {
+        clearTimeout(timeout);
+        if (script.parentNode) script.parentNode.removeChild(script);
+        try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+      }
+
+      window[cbName] = function(payload) {
+        cleanup();
+        try {
+          resolve(gvizToRows(payload));
+        } catch (err) {
+          reject(err);
         }
-        return text;
-      });
+      };
+
+      script.onerror = function() {
+        cleanup();
+        reject(new Error('Chargement Google Sheets bloqué'));
+      };
+
+      script.src = GVIZ_URL;
+      script.src += (GVIZ_URL.indexOf('?') === -1 ? '?' : '&') + 'tqx=responseHandler:' + cbName;
+      document.head.appendChild(script);
+    });
   }
 
   function load() {
@@ -1357,14 +1400,9 @@
     errorEl.classList.remove('visible');
     setStatus('loading', 'Chargement en cours…');
 
-    fetchSheet(CSV_URL2)
-      .catch(function() {
-        // Try alternate endpoint
-        return fetchSheet(CSV_URL);
-      })
-      .then(function(csv) {
+    loadSheetJsonp()
+      .then(function(rows) {
         loadingEl.classList.remove('visible');
-        var rows = parseCSV(csv);
         renderPosts(rows);
       })
       .catch(function(err) {
