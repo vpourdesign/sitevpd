@@ -1129,6 +1129,13 @@
   function setRatioBoxClass(ratioBox, ratioName) {
     ratioBox.classList.remove('ratio-1-1', 'ratio-4-5', 'ratio-9-16');
     ratioBox.classList.add(ratioName || 'ratio-1-1');
+    ratioBox.style.paddingBottom = ratioPadding(ratioName || 'ratio-1-1');
+  }
+
+  function ratioPadding(ratioName) {
+    if (ratioName === 'ratio-4-5') return '125%';
+    if (ratioName === 'ratio-9-16') return '177.78%';
+    return '100%';
   }
 
   function enableAutoRatio(ratioBox, item, explicitFormat) {
@@ -1268,6 +1275,7 @@
       var ratioBox = document.createElement('div');
       ratioBox.className = 'ratio-box ' + rc;
       ratioBox.style.overflow = 'hidden';
+      ratioBox.style.paddingBottom = ratioPadding(rc);
       enableAutoRatio(ratioBox, typeof imgUrls[0] === 'string' ? imgUrls[0] : null, hasExplicitRatio(format) ? format : '');
 
       var track = document.createElement('div');
@@ -1335,6 +1343,7 @@
       // Single image (or first slide of a 1-image carousel / reel thumbnail)
       var ratioBox2 = document.createElement('div');
       ratioBox2.className = 'ratio-box ' + rc;
+      ratioBox2.style.paddingBottom = ratioPadding(rc);
       enableAutoRatio(ratioBox2, typeof imgUrls[0] === 'string' ? imgUrls[0] : null, hasExplicitRatio(format) ? format : '');
       var singleImg = makeMediaNode(imgUrls[0], function() {
         ratioBox2.innerHTML = '<div class="fb-image-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">IMG</div>';
