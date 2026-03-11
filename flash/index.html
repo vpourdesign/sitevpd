@@ -749,7 +749,7 @@
 <script>
 (function() {
   // ── SHEET CONFIG ──
-  var SHEET_ID = '1cIQ7NunhjwzgOQSl2edjoeWzkhRpURTwTl2onCf28x0';
+  var SHEET_ID = '18IpuW-T0uajojkEALwkFIbZOjPM5Bt0CLRM_6AEPcFg';
   var GVIZ_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?gid=0';
 
   // ── ELEMENTS ──
@@ -891,6 +891,24 @@
     return '';
   }
 
+  function inferMonthFromText(val) {
+    var m = String(val || '').match(/\b(janvier|fevrier|février|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|decembre|décembre)(?:\s+\d{4})?\b/i);
+    return m ? m[0].trim() : '';
+  }
+
+  function inferClientFromMergedHeader(headers) {
+    var h0 = String(headers[0] || '');
+    var h1 = String(headers[1] || '').replace(/\s+/g, ' ').trim();
+    if (!/nom client/i.test(h0) || !h1) return '';
+
+    var month = inferMonthFromText(h1);
+    if (!month) return h1.trim();
+
+    var idx = h1.toLowerCase().indexOf(month.toLowerCase());
+    if (idx === -1) return h1.trim();
+    return h1.slice(0, idx).trim();
+  }
+
   function parseImgurAlbum(val) {
     var m = String(val || '').trim().match(/^https?:\/\/(?:www\.)?imgur\.com\/(a|gallery)\/([a-zA-Z0-9]+)/i);
     if (!m) return null;
@@ -942,6 +960,12 @@
   function detectSheetConfig(rows) {
     var headerRowIndex = -1;
     var meta = { client: '', mois: '', defaultPlatform: '' };
+
+    if (rows[0] && rows[0].length) {
+      meta.client = inferClientFromMergedHeader(rows[0]) || meta.client;
+      meta.mois = inferMonthFromText((rows[0][1] || '') + ' ' + (rows[0][0] || '')) || meta.mois;
+      meta.defaultPlatform = inferPlatformLabel(rows[0]) || meta.defaultPlatform;
+    }
 
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i];
@@ -1015,6 +1039,21 @@
     return val;
   }
 
+  function extractMediaItems(val) {
+    var raw = String(val || '').trim();
+    if (!raw) return [];
+
+    var urls = raw.match(/https?:\/\/[^\s,]+/g);
+    if (!urls || !urls.length) {
+      var single = resolveImage(raw);
+      return single ? [single] : [];
+    }
+
+    return urls.map(function(url) {
+      return resolveImage(url);
+    }).filter(Boolean);
+  }
+
   // ── HELPERS ──
   function cell(row, col) { return col >= 0 && row[col] ? row[col].trim() : ''; }
 
@@ -1070,8 +1109,9 @@
   // format: '1:1' | '4:5' | '9:16' | ''
   function buildCard(clientName, day, date, text, imgUrls, type, format) {
     var typeLow = (type || '').toLowerCase().trim();
-    var isReel = typeLow === 'reel' || typeLow === 'reels';
-    var isCarousel = typeLow === 'carrousel' || typeLow === 'carousel';
+    var formatLow = (format || '').toLowerCase().trim();
+    var isReel = typeLow === 'reel' || typeLow === 'reels' || formatLow === 'reel' || formatLow === 'reels' || formatLow === 'story';
+    var isCarousel = typeLow === 'carrousel' || typeLow === 'carousel' || (!isReel && imgUrls.length > 1);
     var rc = ratioClass(format);
     var hasImgs = imgUrls.length > 0;
 
@@ -1315,7 +1355,10 @@
       if (!rowHasContent(row)) continue;
 
       var text = cell(row, colText);
-      var imgUrls = colImgs.map(function(ci) { return resolveImage(cell(row, ci)); }).filter(Boolean);
+      var imgUrls = [];
+      colImgs.forEach(function(ci) {
+        imgUrls = imgUrls.concat(extractMediaItems(cell(row, ci)));
+      });
       var day = cell(row, colDay);
       var date = cell(row, colDate);
       var platform = cell(row, colPlat) || defaultPlatform;
