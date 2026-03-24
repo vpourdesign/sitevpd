@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VPOURDESIGN.COM :: AGENCE CRÉATIVE :: EST. 1999</title>
+<title>VPOURDESIGN.COM :: CREATIVE AGENCY :: EST. 1999</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&family=Orbitron:wght@400;700;900&display=swap');
 
@@ -1489,13 +1489,57 @@
     .feat-body { font-size: 14px; }
   }
 
+  /* LANGUAGE SWITCHER */
+  #lang-switcher {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 0 10px;
+    border-left: 1px solid var(--border);
+    flex-shrink: 0;
+    height: 100%;
+  }
+  .lang-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    color: var(--dim);
+    cursor: crosshair;
+    padding: 4px 6px;
+    transition: color 0.15s;
+    position: relative;
+  }
+  .lang-btn.active {
+    color: var(--accent1);
+  }
+  .lang-btn:hover { color: var(--textbright); }
+  .lang-sep {
+    color: var(--border);
+    font-size: 11px;
+    padding: 0 2px;
+  }
+  @media (max-width: 768px) {
+    #lang-switcher {
+      border-left: none;
+      border-top: 1px solid var(--border);
+      padding: 14px 22px;
+      justify-content: flex-start;
+      width: 100%;
+    }
+    .lang-btn { font-size: 15px; padding: 4px 8px; }
+  }
+
 </style>
 </head>
 <body>
 
 <!-- TOP STATUS BAR -->
 <div id="topbar">
-  <span class="topbar-left">◆ &nbsp;VPOURDESIGN.COM &nbsp;::&nbsp; AGENCE CRÉATIVE &nbsp;::&nbsp; V 3.1.4</span>
+  <span class="topbar-left" data-en="◆ &nbsp;VPOURDESIGN.COM &nbsp;::&nbsp; CREATIVE AGENCY &nbsp;::&nbsp; V 3.1.4" data-fr="◆ &nbsp;VPOURDESIGN.COM &nbsp;::&nbsp; AGENCE CRÉATIVE &nbsp;::&nbsp; V 3.1.4">◆ &nbsp;VPOURDESIGN.COM &nbsp;::&nbsp; CREATIVE AGENCY &nbsp;::&nbsp; V 3.1.4</span>
   <span class="page-counter">01 / 05 &nbsp;◆</span>
   <span class="topbar-right">
     SYS_STATUS: <span style="color:var(--accent1)">ONLINE</span>
@@ -1523,8 +1567,8 @@
         <img src="logo-vpourdesign.png" id="logo-img" alt="VPOURDESIGN">
       </div>
       <div class="splash-right">
-        <div class="splash-tagline">Agence créative</div>
-        <div class="splash-headline">Prêt pour l'an 2000?<br>Nous le sommes</div>
+        <div class="splash-tagline" data-en="Creative agency" data-fr="Agence créative">Creative agency</div>
+        <div class="splash-headline" data-en="Ready for the year 2000?&lt;br&gt;We are." data-fr="Prêt pour l'an 2000?&lt;br&gt;Nous le sommes">Ready for the year 2000?<br>We are.</div>
 
       </div>
     </div>
@@ -1539,11 +1583,16 @@
   <!-- NAV -->
   <div id="navbar">
     <div id="nav-items">
-      <a href="#" class="nav-item active">Accueil</a>
-      <a href="#" class="nav-item">Travaux</a>
-      <a href="#" class="nav-item">Services</a>
-      <a href="#" class="nav-item">À propos</a>
-      <a href="#" class="nav-item">Contact</a>
+      <a href="#" class="nav-item active" data-en="Home" data-fr="Accueil">Home</a>
+      <a href="#" class="nav-item" data-en="Work" data-fr="Travaux">Work</a>
+      <a href="#" class="nav-item" data-en="Services" data-fr="Services">Services</a>
+      <a href="#" class="nav-item" data-en="About" data-fr="À propos">About</a>
+      <a href="#" class="nav-item" data-en="Contact" data-fr="Contact">Contact</a>
+      <div id="lang-switcher">
+        <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+        <span class="lang-sep">|</span>
+        <button class="lang-btn" id="btn-fr" onclick="setLang('fr')">FR</button>
+      </div>
     </div>
   </div>
 
@@ -1554,18 +1603,18 @@
     <div id="left-col">
       <span class="section-label">// NAVIGATION</span>
       <ul class="left-menu">
-        <li><a href="#">Sites web</a></li>
-        <li><a href="#">Pubs web</a></li>
-        <li><a href="#">Vidéos</a></li>
-        <li><a href="#">Images de marque</a></li>
-        <li><a href="#">Contact</a></li>
+        <li><a href="#" data-en="Web sites" data-fr="Sites web">Web sites</a></li>
+        <li><a href="#" data-en="Web ads" data-fr="Pubs web">Web ads</a></li>
+        <li><a href="#" data-en="Videos" data-fr="Vidéos">Videos</a></li>
+        <li><a href="#" data-en="Brand identity" data-fr="Images de marque">Brand identity</a></li>
+        <li><a href="#" data-en="Contact" data-fr="Contact">Contact</a></li>
       </ul>
 
-      <span class="section-label">// SYSTÈME</span>
+      <span class="section-label" data-en="// SYSTEM" data-fr="// SYSTÈME">// SYSTEM</span>
       <div class="status-box">
-        <span class="cy-bar">STATUT SYSTÈME</span>
+        <span class="cy-bar" data-en="SYSTEM STATUS" data-fr="STATUT SYSTÈME">SYSTEM STATUS</span>
         <div class="status-line">
-          <span class="label">PROJETS</span>
+          <span class="label" data-en="PROJECTS" data-fr="PROJETS">PROJECTS</span>
           <span class="val">024</span>
         </div>
         <div class="status-line">
@@ -1573,13 +1622,13 @@
           <span class="val">037</span>
         </div>
         <div class="status-line">
-          <span class="label">PRIX</span>
+          <span class="label" data-en="AWARDS" data-fr="PRIX">AWARDS</span>
           <span class="val">008</span>
         </div>
         <div class="progress-bar">
           <div class="progress-fill" style="width:72%"></div>
         </div>
-        <div style="font-size:8px; color:var(--dim); text-align:right;">72% capacité</div>
+        <div style="font-size:8px; color:var(--dim); text-align:right;" data-en="72% capacity" data-fr="72% capacité">72% capacity</div>
         <div class="divider-cut"></div>
         <div class="seg-row">
           <span class="seg-btn on">01</span>
@@ -1592,7 +1641,7 @@
       <div class="deco-circle"></div>
 
       <div class="counter-box">
-        <span class="cy-bar acc1">VISITEURS</span>
+        <span class="cy-bar acc1" data-en="VISITORS" data-fr="VISITEURS">VISITORS</span>
         <span class="counter-digits" id="counter">024,816</span>
       </div>
     </div>
@@ -1629,7 +1678,7 @@
       </div>
 
       <!-- WORK LABEL -->
-      <div class="work-grid-label diam">TRAVAUX SÉLECTIONNÉS &nbsp;&nbsp; [2024–1999]<span class="grid-index">06 / 06</span></div>
+      <div class="work-grid-label diam"><span data-en="SELECTED WORKS &nbsp;&nbsp; [2024–1999]" data-fr="TRAVAUX SÉLECTIONNÉS &nbsp;&nbsp; [2024–1999]">SELECTED WORKS &nbsp;&nbsp; [2024–1999]</span><span class="grid-index">06 / 06</span></div>
 
       <!-- WORK GRID -->
       <div class="work-grid-wrap">
@@ -1643,7 +1692,7 @@
             <div class="cell-overlay">
               <span class="cell-num-over">01</span>
               <span class="cell-title-over">Fred + Max</span>
-              <span class="cell-cat-over">Image de marque</span>
+              <span class="cell-cat-over" data-en="Brand identity" data-fr="Image de marque">Brand identity</span>
             </div>
           </div>
         </div>
@@ -1653,7 +1702,7 @@
             <div class="cell-overlay">
               <span class="cell-num-over">02</span>
               <span class="cell-title-over">Santé Rosemère</span>
-              <span class="cell-cat-over">Site web</span>
+              <span class="cell-cat-over" data-en="Website" data-fr="Site web">Website</span>
             </div>
           </div>
         </div>
@@ -1663,7 +1712,7 @@
             <div class="cell-overlay">
               <span class="cell-num-over">03</span>
               <span class="cell-title-over">Les Barbiers</span>
-              <span class="cell-cat-over">Image de marque</span>
+              <span class="cell-cat-over" data-en="Brand identity" data-fr="Image de marque">Brand identity</span>
             </div>
           </div>
         </div>
@@ -1673,7 +1722,7 @@
             <div class="cell-overlay">
               <span class="cell-num-over">04</span>
               <span class="cell-title-over">RE/MAX Crystal</span>
-              <span class="cell-cat-over">Site web</span>
+              <span class="cell-cat-over" data-en="Website" data-fr="Site web">Website</span>
             </div>
           </div>
         </div>
@@ -1683,7 +1732,7 @@
             <div class="cell-overlay">
               <span class="cell-num-over">05</span>
               <span class="cell-title-over">Probaclac</span>
-              <span class="cell-cat-over">Pub web</span>
+              <span class="cell-cat-over" data-en="Web ad" data-fr="Pub web">Web ad</span>
             </div>
           </div>
         </a>
@@ -1693,7 +1742,7 @@
             <div class="cell-overlay">
               <span class="cell-num-over">06</span>
               <span class="cell-title-over">Olivier Martineau</span>
-              <span class="cell-cat-over">Image de marque</span>
+              <span class="cell-cat-over" data-en="Brand identity" data-fr="Image de marque">Brand identity</span>
             </div>
           </div>
         </div>
@@ -1703,14 +1752,14 @@
       <!-- FEATURED TEXT -->
       <div class="featured-block">
         <span class="kitsch-badge">STUDIO A</span>
-        <div class="feat-title">// PRÉSENTATION DU STUDIO</div>
-        <p class="feat-body">
-          Vpourdesign est un atelier de création indépendant fondé par <a href="#">Victoire P.</a>,
-          spécialisé en identité visuelle, systèmes typographiques et expériences interactives.
-          Nous croyons que <span style="color:var(--accent1)">un grand design communique avant d'expliquer</span>.
+        <div class="feat-title" data-en="// STUDIO PRESENTATION" data-fr="// PRÉSENTATION DU STUDIO">// STUDIO PRESENTATION</div>
+        <p class="feat-body" id="feat-body-text">
+          Vpourdesign is an independent creative studio founded by <a href="#">Victoire P.</a>,
+          specializing in visual identity, typographic systems, and interactive experiences.
+          We believe that <span style="color:var(--accent1)">great design communicates before it explains</span>.
           <br><br>
-          Actuellement disponible pour des missions T1 · 2000.
-          &nbsp;<a href="#">→ NOUS CONTACTER</a>
+          Currently available for Q1 · 2000 projects.
+          &nbsp;<a href="#">→ CONTACT US</a>
         </p>
       </div>
 
@@ -1723,9 +1772,9 @@
 
   <!-- FOOTER -->
   <div id="footer">
-    <span class="footer-copy">&copy; 1999 VPOURDESIGN.COM &nbsp;·&nbsp; TOUS DROITS RÉSERVÉS</span>
-    <span class="footer-status"><span class="blink" style="color:var(--accent3)">■</span> &nbsp;MIS À JOUR : 1999.11.30</span>
-    <a href="#" class="footer-link">↑ HAUT</a>
+    <span class="footer-copy" data-en="&copy; 1999 VPOURDESIGN.COM &nbsp;·&nbsp; ALL RIGHTS RESERVED" data-fr="&copy; 1999 VPOURDESIGN.COM &nbsp;·&nbsp; TOUS DROITS RÉSERVÉS">&copy; 1999 VPOURDESIGN.COM &nbsp;·&nbsp; ALL RIGHTS RESERVED</span>
+    <span class="footer-status"><span class="blink" style="color:var(--accent3)">■</span> &nbsp;<span data-en="UPDATED" data-fr="MIS À JOUR">UPDATED</span> : 1999.11.30</span>
+    <a href="#" class="footer-link" data-en="↑ TOP" data-fr="↑ HAUT">↑ TOP</a>
   </div>
 
 </div><!-- /wrapper -->
@@ -1733,8 +1782,10 @@
 <!-- BOTTOM HUD -->
 <div id="bottom-hud">
   <div class="bhud-ticker">
-    <span class="bhud-scroll">
-      ◆ VPOURDESIGN.COM &nbsp;—&nbsp; AGENCE CRÉATIVE DEPUIS 1999 &nbsp;—&nbsp; SITES WEB · VIDÉOS · IDENTITÉ VISUELLE · PUBLICITÉ &nbsp;—&nbsp; DISPONIBLE POUR MISSIONS &nbsp;—&nbsp; MONTRÉAL QC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ◆ VPOURDESIGN.COM &nbsp;—&nbsp; AGENCE CRÉATIVE DEPUIS 1999 &nbsp;—&nbsp; SITES WEB · VIDÉOS · IDENTITÉ VISUELLE · PUBLICITÉ &nbsp;—&nbsp; DISPONIBLE POUR MISSIONS &nbsp;—&nbsp; MONTRÉAL QC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <span class="bhud-scroll" id="bhud-scroll-text"
+      data-en="◆ VPOURDESIGN.COM &nbsp;—&nbsp; CREATIVE AGENCY SINCE 1999 &nbsp;—&nbsp; WEBSITES · VIDEOS · VISUAL IDENTITY · ADVERTISING &nbsp;—&nbsp; AVAILABLE FOR PROJECTS &nbsp;—&nbsp; MONTRÉAL QC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ◆ VPOURDESIGN.COM &nbsp;—&nbsp; CREATIVE AGENCY SINCE 1999 &nbsp;—&nbsp; WEBSITES · VIDEOS · VISUAL IDENTITY · ADVERTISING &nbsp;—&nbsp; AVAILABLE FOR PROJECTS &nbsp;—&nbsp; MONTRÉAL QC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+      data-fr="◆ VPOURDESIGN.COM &nbsp;—&nbsp; AGENCE CRÉATIVE DEPUIS 1999 &nbsp;—&nbsp; SITES WEB · VIDÉOS · IDENTITÉ VISUELLE · PUBLICITÉ &nbsp;—&nbsp; DISPONIBLE POUR MISSIONS &nbsp;—&nbsp; MONTRÉAL QC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ◆ VPOURDESIGN.COM &nbsp;—&nbsp; AGENCE CRÉATIVE DEPUIS 1999 &nbsp;—&nbsp; SITES WEB · VIDÉOS · IDENTITÉ VISUELLE · PUBLICITÉ &nbsp;—&nbsp; DISPONIBLE POUR MISSIONS &nbsp;—&nbsp; MONTRÉAL QC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;">
+      ◆ VPOURDESIGN.COM &nbsp;—&nbsp; CREATIVE AGENCY SINCE 1999 &nbsp;—&nbsp; WEBSITES · VIDEOS · VISUAL IDENTITY · ADVERTISING &nbsp;—&nbsp; AVAILABLE FOR PROJECTS &nbsp;—&nbsp; MONTRÉAL QC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ◆ VPOURDESIGN.COM &nbsp;—&nbsp; CREATIVE AGENCY SINCE 1999 &nbsp;—&nbsp; WEBSITES · VIDEOS · VISUAL IDENTITY · ADVERTISING &nbsp;—&nbsp; AVAILABLE FOR PROJECTS &nbsp;—&nbsp; MONTRÉAL QC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
     </span>
   </div>
   <span class="bhud-right">V 3.1.4 ◆</span>
@@ -1802,17 +1853,61 @@
   })();
 
   // Status bar scrolling text (authentic 1999!)
-  const messages = [
-    ':: VPOURDESIGN.COM :: DESIGN LABORATORY :: EST. 1999 ::',
-    ':: WELCOME TO THE STUDIO :: CURRENTLY AVAILABLE FOR FREELANCE PROJECTS ::',
-    ':: BEST EXPERIENCED AT 800×600 :: FLASH 4 RECOMMENDED ::',
-    ':: VPOURDESIGN.COM :: SITES WEB · VIDÉOS · IMAGES DE MARQUE :: v3.1 ::'
-  ];
+  const messages = {
+    en: [
+      ':: VPOURDESIGN.COM :: DESIGN LABORATORY :: EST. 1999 ::',
+      ':: WELCOME TO THE STUDIO :: CURRENTLY AVAILABLE FOR FREELANCE PROJECTS ::',
+      ':: BEST EXPERIENCED AT 800×600 :: FLASH 4 RECOMMENDED ::',
+      ':: VPOURDESIGN.COM :: WEBSITES · VIDEOS · BRAND IDENTITY :: v3.1 ::'
+    ],
+    fr: [
+      ':: VPOURDESIGN.COM :: LABORATOIRE DE DESIGN :: EST. 1999 ::',
+      ':: BIENVENUE AU STUDIO :: DISPONIBLE POUR MISSIONS FREELANCE ::',
+      ':: MEILLEURE EXPÉRIENCE À 800×600 :: FLASH 4 RECOMMANDÉ ::',
+      ':: VPOURDESIGN.COM :: SITES WEB · VIDÉOS · IMAGES DE MARQUE :: v3.1 ::'
+    ]
+  };
   let mi = 0;
+  let currentLang = localStorage.getItem('vpd-lang') || 'en';
+
   setInterval(() => {
-    window.status = messages[mi % messages.length];
+    window.status = messages[currentLang][mi % messages[currentLang].length];
     mi++;
   }, 4000);
+
+  // Featured body HTML per language
+  const featBodyContent = {
+    en: 'Vpourdesign is an independent creative studio founded by <a href="#">Victoire P.</a>, specializing in visual identity, typographic systems, and interactive experiences. We believe that <span style="color:var(--accent1)">great design communicates before it explains</span>.<br><br>Currently available for Q1 · 2000 projects. &nbsp;<a href="#">→ CONTACT US</a>',
+    fr: 'Vpourdesign est un atelier de création indépendant fondé par <a href="#">Victoire P.</a>, spécialisé en identité visuelle, systèmes typographiques et expériences interactives. Nous croyons que <span style="color:var(--accent1)">un grand design communique avant d\'expliquer</span>.<br><br>Actuellement disponible pour des missions T1 · 2000. &nbsp;<a href="#">→ NOUS CONTACTER</a>'
+  };
+
+  // Language switcher
+  function setLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('vpd-lang', lang);
+    document.documentElement.lang = lang;
+
+    // Toggle button states
+    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+
+    // Update all elements with data-en / data-fr attributes
+    document.querySelectorAll('[data-en][data-fr]').forEach(function(el) {
+      el.innerHTML = el.getAttribute('data-' + lang);
+    });
+
+    // Update featured body (special case with rich HTML)
+    var fb = document.getElementById('feat-body-text');
+    if (fb) fb.innerHTML = featBodyContent[lang];
+
+    // Update page title
+    document.title = lang === 'fr'
+      ? 'VPOURDESIGN.COM :: AGENCE CRÉATIVE :: EST. 1999'
+      : 'VPOURDESIGN.COM :: CREATIVE AGENCY :: EST. 1999';
+  }
+
+  // Apply saved language on load
+  setLang(currentLang);
 </script>
 </body>
 </html>
